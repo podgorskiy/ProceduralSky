@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "Appication.h"
+
 void error_callback(int error, const char* description)
 {
 	std::cerr << description;
@@ -19,7 +21,7 @@ int main()
 {
 	glfwSetErrorCallback(error_callback);
 
-	std::cout << "Compiled against GLFW" << GLFW_VERSION_MAJOR << "." << GLFW_VERSION_MINOR << "." << GLFW_VERSION_REVISION << std::endl;
+	std::cout << "Compiled against GLFW " << GLFW_VERSION_MAJOR << "." << GLFW_VERSION_MINOR << "." << GLFW_VERSION_REVISION << std::endl;
 
 	if (!glfwInit())
 	{
@@ -38,16 +40,20 @@ int main()
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
-	
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	Appication app;
+
+	if (app.Init() != EXIT_SUCCESS)
+	{
+		std::exit(EXIT_FAILURE);
+	}
 
 	while (!glfwWindowShouldClose(window))
 	{
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
-		glViewport(0, 0, width, height);
 		
-		glClear(GL_COLOR_BUFFER_BIT);
+		app.Update(width, height);
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
