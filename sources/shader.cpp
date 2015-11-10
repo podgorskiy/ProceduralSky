@@ -1,20 +1,11 @@
-#include <vector>
-#include <map>
-#include "common.h"
+#include <GL/gl3w.h>
+#include <cassert>
 
-#include "memleak.h"
+#include "shader.h"
 
-#include "SBScene/SBString.h"
-#include "SBShader.h"
+int Shader::current_shader=-1;
 
-
-#undef MessageBox
-#define MessageBox(...) ;
-
-int SBShader::current_shader=-1;
-BlendMode SBShader::ms_blendMode=Alpha_1MinusAlpha;
-
-void SBShader::PrintSource(const char* source)
+void Shader::PrintSource(const char* source)
 {
 	int i;
 	for(i=0;i<100000;i++)
@@ -29,14 +20,14 @@ void SBShader::PrintSource(const char* source)
 		if( (t[j++]=='\n') || (i==size-1) ){
 			t[--j]=0;
 			j=0;
-			LOG_("%3d:   %s",line++,t);
+			printf("%3d:   %s",line++,t);
 		}
 	}
 	delete[] t;
 }
 
-int SBShader::loadShader(GLenum shaderType, const char* pSource, bool quiet){
-
+int Shader::loadShader(GLenum shaderType, const char* pSource, bool quiet)
+{
 	m_uniforms.reserve(20);
 
 	GLuint shader = glCreateShader(shaderType);
@@ -44,9 +35,9 @@ int SBShader::loadShader(GLenum shaderType, const char* pSource, bool quiet){
         glShaderSource(shader, 1, &pSource, NULL);
 		if(!quiet){
 		if(GL_VERTEX_SHADER==shaderType){
-			LOG_GLSL("Compiling vertex shader   :  %s",name);}
+			printf("Compiling vertex shader   :  %s",name);}
 		if(GL_FRAGMENT_SHADER==shaderType){
-			LOG_GLSL("Compiling fragment shader :  %s",name);}
+			printf("Compiling fragment shader :  %s",name);}
 		}
         glCompileShader(shader);
         GLint compiled = 0;
@@ -54,16 +45,16 @@ int SBShader::loadShader(GLenum shaderType, const char* pSource, bool quiet){
 		GLint infoLen = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
         if (!compiled) {
-			LOG_("\n  <----------------- ERROR ! ----------------->\n");
+			printf("\n  <----------------- ERROR ! ----------------->\n");
 		}
         if ((infoLen>1) && (!quiet || !compiled)) {
 			if(compiled){
-				LOG_("\n  <--- Warning ! --->\n");}
+				printf("\n  <--- Warning ! --->\n");}
 			PrintSource(pSource);
             char* buf = (char*) malloc(infoLen);
             if (buf) {
                 glGetShaderInfoLog(shader, infoLen, NULL, buf);
-				LOG_GLSL("Compilation log:\n%s",buf);
+				printf("Compilation log:\n%s",buf);
                 free(buf);
             }
 			if (!compiled) {
@@ -72,15 +63,15 @@ int SBShader::loadShader(GLenum shaderType, const char* pSource, bool quiet){
 			}
         }        
 		if (!compiled) {
-			LOG_("\n  <------------------------------------------->\n");
+			printf("\n  <------------------------------------------->\n");
 		}
     }
     return shader;
 }
 
-int SBShader::CreateProgramFromConstChar( const char *name, const char* pVertexShader, const char* pFragmentShader, BlendMode mode){
+int Shader::CreateProgramFrom(const char *name, const char* pVertexShader, const char* pFragmentShader)
+{
 	this->name = name; 
-	m_mode = mode;
 	
 	GLuint vertexshader =   loadShader(GL_VERTEX_SHADER,   pVertexShader);
 
@@ -102,7 +93,7 @@ int SBShader::CreateProgramFromConstChar( const char *name, const char* pVertexS
 		{
 			char* infoLog = (char*)malloc(sizeof(char) * infoLen);
 			glGetProgramInfoLog(prog, infoLen, NULL, infoLog);
-			LOG_GLSL("Error linking program:\n%s\n", infoLog);
+			printf("Error linking program:\n%s\n", infoLog);
 			free(infoLog);
 			return 0;
 		}
@@ -122,10 +113,10 @@ int SBShader::CreateProgramFromConstChar( const char *name, const char* pVertexS
 		GLuint location = glGetUniformLocation(program, name);
 		ShaderAttribute uniform;
 		uniform = location;
-		uniform.SetType((SBShader::SB_TYPE)type);
+		uniform.SetType((Shader::SB_TYPE)type);
 		uniform.SetNum(num);
 		m_uniforms.push_back(uniform);
-		m_uniformsNames[SBString(name)] = m_uniforms.size() - 1;
+		m_uniformsNames[name] = m_uniforms.size() - 1;
 	}
 	
 	positionAttribute = GetAttribLocation("a_pos");
@@ -158,34 +149,34 @@ int SBShader::CreateProgramFromConstChar( const char *name, const char* pVertexS
 	return 0;
 }
 
-SBShader::ShaderAttribute& SBShader::GetUniform(const char* name)
+Shader::ShaderAttribute& Shader::GetUniform(const char* name)
 {
-	std::map<SBString, int>::iterator it = m_uniformsNames.find(name);
+	std::map<std::string, int>::iterator it = m_uniformsNames.find(name);
 	if (it != m_uniformsNames.end())
 	{
 		return m_uniforms[it->second];
 	}
-	LOGE("Uniform not found: %s", name);
+	printf("Uniform not found: %s", name);
 	return m_uniforms[0];
 }
 
-SBShader::ShaderAttribute& SBShader::GetUniformByID(int id)
+Shader::ShaderAttribute& Shader::GetUniformByID(int id)
 {
-	PASSERT2(id<static_cast<int>(m_uniforms.size()), "Wrong ID: %d", id);
+	assert(id<static_cast<int>(m_uniforms.size())); // Wrong id
 	return m_uniforms[id];
 }
 
-int SBShader::GetUniformsCount()
+int Shader::GetUniformsCount()
 {
 	return m_uniformsNames.size();
 }
 
-void SBShader::SetIteratorTofirst()
+void Shader::SetIteratorTofirst()
 {
 	m_uniformsNamesIt = m_uniformsNames.begin();
 }
 
-SBShader::ShaderAttribute* SBShader::GetNextUniform(const char*& name)
+Shader::ShaderAttribute* Shader::GetNextUniform(const char*& name)
 {
 	name = m_uniformsNamesIt->first.c_str();
 	return &m_uniforms[(m_uniformsNamesIt++)->second];

@@ -1,14 +1,10 @@
 #pragma once
-#ifndef _SHADER_H
-#define _SHADER_H
+#include <map>
+#include <vector>
+#include <string>
 
-/**
-\todo 
-1) Think about moving blending stuff to separate manager.
-2) Implement managing of attributes.
-*/
-
-class SBShader{
+class Shader
+{
 public:
 
 	enum SB_TYPE
@@ -49,51 +45,43 @@ public:
 		int num;
 	};
 
-	SBShader() :name(0), program(-1), wireframe_program(-1), m_mode(No_blend){};
-	~SBShader(){};
-
-	/*Methods*/
-	
-	///\todo  TODO. Perhaps it is not needed 
-	//ShaderAttribute&	GetAttribute(const char* name){return *new ShaderAttribute();};
+	Shader() :name(0), program(-1), wireframe_program(-1){};
+	~Shader(){};
 	
 	/// Gets attrubute structure of uniform by it's name. 
 	/** ShaderAttribute describes unifroms type, size, OpenGL handle */
-	ShaderAttribute&	GetUniform(const char* name);
+	ShaderAttribute& GetUniform(const char* name);
 
 	/// Gets attrubute structure of uniform by it's ID.
 	/** ID is assigned to uniform at shader loading stage
 	ShaderAttribute describes unifroms type, size, OpenGL handle */
-	ShaderAttribute&	GetUniformByID(int id);
-
+	ShaderAttribute& GetUniformByID(int id);
 
 	/// Gets count of uniforms attrubute structures that was created.
-	int					GetUniformsCount();
+	int GetUniformsCount();
 
 	/// Sets internal iterator in shader object to first uniform.
-	void				SetIteratorTofirst();
+	void SetIteratorTofirst();
 
 	/// Returns next uniform and it's name. 
 	/** Methods SetIteratorTofirst and GetNextUniform is needed just becase it is the only method to get uniforms name,
 	as far it is not stored in attrubute structures. */
-	SBShader::ShaderAttribute*	GetNextUniform(const char*& name);
+	ShaderAttribute* GetNextUniform(const char*& name);
 
 	/// Creates new programm
-	int					CreateProgramFromConstChar(
-							const char* name,
-							const char* pVertexShader, 
-							const char* pFragmentShader, 
-							BlendMode mode = Alpha_1MinusAlpha);
+	int CreateProgramFrom(	const char* name,
+									const char* pVertexShader, 
+									const char* pFragmentShader);
 
 	/// wrapper of glGetAttribLocation
-	int					GetAttribLocation(const char *name);
+	int GetAttribLocation(const char *name);
 
 	/// wrapper of glGetUniformLocation
-	int					GetUniformLocation(const char *name);
+	int	GetUniformLocation(const char *name);
 
 	/// Sets current shader for render
-	void				UseIt();
-	void				UseItDebug();
+	void UseIt();
+	void UseItDebug();
 
 private:
 	/// Loads and compile shader. For internal use only
@@ -122,71 +110,38 @@ public:
 private:
 	int program;
 	int wireframe_program;
-	BlendMode m_mode;
 
-	std::vector<ShaderAttribute>		m_uniforms;
-	std::map<SBString, int>				m_uniformsNames;
-	std::map<SBString, int>::iterator	m_uniformsNamesIt;
+	std::vector<ShaderAttribute>			m_uniforms;
+	std::map<std::string, int>				m_uniformsNames;
+	std::map<std::string, int>::iterator	m_uniformsNamesIt;
 
 	static int current_shader;	///< to reduce switching from shader to shader
-	static BlendMode ms_blendMode;
 	const char* name;
 };
 
-
-
-inline void SBShader::UseIt(){
+inline void Shader::UseIt()
+{
 	if (current_shader != program){
 		glUseProgram(program);
 		current_shader = program;
 	}
-	if (ms_blendMode != m_mode)
-	{
-		switch (m_mode)
-		{
-		case Alpha_1MinusAlpha:
-		{
-								  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-								  if (ms_blendMode == No_blend)
-								  {
-									  glEnable(GL_BLEND);
-								  }
-								  break;
-		}
-		case Alpha_1:
-		{
-						glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-						if (ms_blendMode == No_blend)
-						{
-							glEnable(GL_BLEND);
-						}
-						break;
-		}
-		case No_blend:
-		{
-						 glBlendFunc(GL_ONE, GL_ZERO);
-						 glDisable(GL_BLEND);
-						 break;
-		}
-		}
-		ms_blendMode = m_mode;
-	}
 }
 
-inline void SBShader::UseItDebug(){
-	if (current_shader != wireframe_program){
+inline void Shader::UseItDebug()
+{
+	if (current_shader != wireframe_program)
+	{
 		glUseProgram(wireframe_program);
 		current_shader = wireframe_program;
 	}
 }
 
-inline int SBShader::GetAttribLocation(const char *name){
+inline int Shader::GetAttribLocation(const char *name)
+{
 	return glGetAttribLocation(program, name);
-};
-inline int SBShader::GetUniformLocation(const char *name){
-	return glGetUniformLocation(program, name);
-};
+}
 
-#endif
- 
-//........... <-- this was writen by my daughter
+inline int Shader::GetUniformLocation(const char *name)
+{
+	return glGetUniformLocation(program, name);
+}
