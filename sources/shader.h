@@ -70,8 +70,8 @@ public:
 
 	/// Creates new programm
 	int CreateProgramFrom(	const char* name,
-									const char* pVertexShader, 
-									const char* pFragmentShader);
+							const char* pVertexShader, 
+							const char* pFragmentShader);
 
 	/// wrapper of glGetAttribLocation
 	int GetAttribLocation(const char *name);
