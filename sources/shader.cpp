@@ -1,5 +1,8 @@
 #include <GL/gl3w.h>
 #include <cassert>
+#include <cstdlib>
+#include <cstdio>
+#include <iostream>
 
 #include "shader.h"
 
@@ -8,19 +11,18 @@ int Shader::current_shader=-1;
 void Shader::PrintSource(const char* source)
 {
 	int i;
-	for(i=0;i<100000;i++)
-		if(source[i]==0) break;
-	int size = i;
+	int size = strlen(source);
 	char* t = new char[size];
 	int j=0;
 	int line = 1;
-	for(i=0;i<size;i++)
+	for(i=0; i<size; i++)
 	{
 		t[j]=source[i];
-		if( (t[j++]=='\n') || (i==size-1) ){
+		if ( (t[j++]=='\n') || (i==size-1) )
+		{
 			t[--j]=0;
 			j=0;
-			printf("%3d:   %s",line++,t);
+			printf("%3d:   %s\n",line++,t);
 		}
 	}
 	delete[] t;
@@ -31,42 +33,60 @@ int Shader::loadShader(GLenum shaderType, const char* pSource, bool quiet)
 	m_uniforms.reserve(20);
 
 	GLuint shader = glCreateShader(shaderType);
-    if (shader) {
-        glShaderSource(shader, 1, &pSource, NULL);
-		if(!quiet){
-		if(GL_VERTEX_SHADER==shaderType){
-			printf("Compiling vertex shader   :  %s",name);}
-		if(GL_FRAGMENT_SHADER==shaderType){
-			printf("Compiling fragment shader :  %s",name);}
-		}
-        glCompileShader(shader);
-        GLint compiled = 0;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-		GLint infoLen = 0;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-        if (!compiled) {
-			printf("\n  <----------------- ERROR ! ----------------->\n");
-		}
-        if ((infoLen>1) && (!quiet || !compiled)) {
-			if(compiled){
-				printf("\n  <--- Warning ! --->\n");}
-			PrintSource(pSource);
-            char* buf = (char*) malloc(infoLen);
-            if (buf) {
-                glGetShaderInfoLog(shader, infoLen, NULL, buf);
-				printf("Compilation log:\n%s",buf);
-                free(buf);
-            }
-			if (!compiled) {
-            glDeleteShader(shader);
-            shader = 0;
+	
+	if (shader)
+	{
+		glShaderSource(shader, 1, &pSource, NULL);
+		if (!quiet)
+		{
+			if (GL_VERTEX_SHADER==shaderType)
+			{
+				std::cout << "Compiling vertex shader   :  " << name << std::endl;
 			}
-        }        
-		if (!compiled) {
-			printf("\n  <------------------------------------------->\n");
+			if (GL_FRAGMENT_SHADER==shaderType)
+			{
+				std::cout << "Compiling fragment shader :  " << name << std::endl;
+			}
 		}
-    }
-    return shader;
+		
+		glCompileShader(shader);
+		GLint compiled = 0;
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+		GLint infoLen = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+		
+		if (!compiled) 
+		{
+			std::cout << "\n  <----------------- ERROR ! ----------------->\n";
+		}
+		
+		if ((infoLen>1) && (!quiet || !compiled)) 
+		{
+			if (compiled)
+			{
+				std::cout << "\n  <--- Warning ! --->\n";
+			}
+			
+			PrintSource(pSource);
+			
+			char* buf = new char[infoLen];
+			glGetShaderInfoLog(shader, infoLen, NULL, buf);
+			std::cout << "Compilation log:\n" << buf << std::endl;
+			delete[] buf;
+			
+			if (!compiled) 
+			{
+				glDeleteShader(shader);
+				shader = 0;
+			}
+		}
+		
+		if (!compiled) 
+		{
+			std::cout << "\n  <------------------------------------------->\n";
+		}
+	}
+	return shader;
 }
 
 int Shader::CreateProgramFrom(const char *name, const char* pVertexShader, const char* pFragmentShader)
@@ -77,10 +97,10 @@ int Shader::CreateProgramFrom(const char *name, const char* pVertexShader, const
 
 	GLuint fragmentshader = loadShader(GL_FRAGMENT_SHADER, pFragmentShader);
 
-	int	prog = glCreateProgram();         // create empty OpenGL Program
-	glAttachShader(prog, vertexshader);   // add the vertex shader to program
-	glAttachShader(prog, fragmentshader); // add the fragment shader to program
-	glLinkProgram(prog);     
+	int	prog = glCreateProgram();		 	// create empty OpenGL Program
+	glAttachShader(prog, vertexshader);		// add the vertex shader to program
+	glAttachShader(prog, fragmentshader);	// add the fragment shader to program
+	glLinkProgram(prog);	 
 
 	// Check the link status
 	int linked;
@@ -91,19 +111,20 @@ int Shader::CreateProgramFrom(const char *name, const char* pVertexShader, const
 		glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &infoLen);
 		if(infoLen > 1)
 		{
-			char* infoLog = (char*)malloc(sizeof(char) * infoLen);
+			char* infoLog = new char[infoLen];
 			glGetProgramInfoLog(prog, infoLen, NULL, infoLog);
-			printf("Error linking program:\n%s\n", infoLog);
-			free(infoLog);
-			return 0;
+			std::cout << "Error linking program:\n" << infoLog << std::endl;
+			delete[] infoLog;
+			return EXIT_FAILURE;
 		}
 		glDeleteProgram(prog);
 	}
 	program = prog;
 	int total = -1;
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &total);
-    
-	for (int i = 0; i<total; ++i)  {
+	
+	for (int i = 0; i<total; ++i)  
+	{
 		int name_len = -1, num = -1;
 		GLenum type = GL_ZERO;
 		char name[100];
@@ -134,19 +155,19 @@ int Shader::CreateProgramFrom(const char *name, const char* pVertexShader, const
 	bonesIdsAttribute = GetAttribLocation("a_bonesIds");
 	bonesWeightsAttribute = GetAttribLocation("a_bonesWeights");
 	
-    #ifndef NDEBUG
+	#ifndef NDEBUG
 	fragmentshader = loadShader(GL_FRAGMENT_SHADER, 
 "void main() {\n"
 "	gl_FragColor = vec4(1.0,1.0,1.0,1.0);\n"
 "}\n",true);
-	prog = glCreateProgram();         // create empty OpenGL Program
+	prog = glCreateProgram();		 // create empty OpenGL Program
 	glAttachShader(prog, vertexshader);   // add the vertex shader to program
 	glAttachShader(prog, fragmentshader); // add the fragment shader to program
 	glLinkProgram(prog); 
 	wireframe_program = prog;
 	#endif
 	
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 Shader::ShaderAttribute& Shader::GetUniform(const char* name)
