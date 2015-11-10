@@ -1,30 +1,30 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <cstdlib>
 
 void error_callback(int error, const char* description)
 {
-    fputs(description, stderr);
+	std::cerr << description;
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
 }
 
 int main()
 {
 	glfwSetErrorCallback(error_callback);
 
-	printf("Compiled against GLFW %i.%i.%i\n",
-       GLFW_VERSION_MAJOR,
-       GLFW_VERSION_MINOR,
-       GLFW_VERSION_REVISION);
+	std::cout << "Compiled against GLFW" << GLFW_VERSION_MAJOR << "." << GLFW_VERSION_MINOR << "." << GLFW_VERSION_REVISION << std::endl;
 
 	if (!glfwInit())
 	{
-		printf("Failed to initialize GLFW");
-		exit(EXIT_FAILURE);
+		std::cerr << "Failed to initialize GLFW";
+		std::exit(EXIT_FAILURE);
 	}
 
 	GLFWwindow* window = glfwCreateWindow(640, 480, "ProceduralSky", NULL, NULL);
@@ -32,8 +32,8 @@ int main()
 	if (!window)
 	{
 		glfwTerminate();
-		printf("Failed to create window");
-		exit(EXIT_FAILURE);
+		std::cerr << "Failed to create window";
+		std::exit(EXIT_FAILURE);
 	}
 
 	glfwMakeContextCurrent(window);
@@ -43,14 +43,14 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
-        
+		
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+		glfwSwapBuffers(window);
+		glfwPollEvents();
 	}
 
 	glfwDestroyWindow(window);
