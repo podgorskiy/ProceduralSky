@@ -45,6 +45,16 @@ public:
 		int num;
 	};
 
+	class AttributeGuard
+	{
+	public:
+		AttributeGuard(const ShaderAttribute& attribute);
+		~AttributeGuard();
+
+	private:
+		int m_attribute;
+	};
+
 	Shader() :name(0), program(-1), wireframe_program(-1){};
 	~Shader(){};
 	
@@ -77,7 +87,7 @@ public:
 	int GetAttribLocation(const char *name);
 
 	/// wrapper of glGetUniformLocation
-	int	GetUniformLocation(const char *name);
+	int GetUniformLocation(const char *name);
 
 	/// Sets current shader for render
 	void UseIt();
