@@ -203,3 +203,13 @@ Shader::ShaderAttribute* Shader::GetNextUniform(const char*& name)
 	return &m_uniforms[(m_uniformsNamesIt++)->second];
 }
 
+Shader::AttributeGuard::AttributeGuard(const ShaderAttribute& attribute)
+{
+	m_attribute = attribute;
+	glEnableVertexAttribArray(m_attribute);
+};
+
+Shader::AttributeGuard::~AttributeGuard()
+{
+	glDisableVertexAttribArray(m_attribute);
+};
