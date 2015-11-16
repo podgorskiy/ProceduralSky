@@ -7,3 +7,12 @@
 [submodule "libs/glm"]
 	path = libs/glm
 	url = https://github.com/g-truc/glm.git
+[submodule "libs/imgui"]
+	path = libs/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "libs/pugixml"]
+	path = libs/pugixml
+	url = https://github.com/zeux/pugixml.git
+[submodule "libs/lz4"]
+	path = libs/lz4
+	url = https://github.com/Cyan4973/lz4.git
