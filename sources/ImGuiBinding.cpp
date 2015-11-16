@@ -1,11 +1,11 @@
 #include "ImGuiBinding.h"
 #include "SBCFile.h"
 #include "SBShader/SBShader.h"
+#include "SBOpenGLHeaders.h"
 #include "Appication.h"
 #include "Events.h"
 
 #include <imgui.h>
-#include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 
 void ImGuiBinding::Init()

@@ -1,7 +1,7 @@
 #pragma once
 #include "IFile.h"
+#include "SBOpenGLHeaders.h"
 
-#include <GL/gl3w.h>
 #include <map>
 #include <vector>
 #include <string>
