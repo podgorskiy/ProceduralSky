@@ -128,7 +128,7 @@ namespace SB
 	template<typename EventType>
 	void EventManager::SpecificEventManager<EventType>::Dispatch(const EventType& event)
 	{
-		for (std::vector< EventReceiver<EventType>* >::iterator it = m_eventReceivers.begin(); it != m_eventReceivers.end(); ++it)
+		for (typename std::vector< EventReceiver<EventType>* >::iterator it = m_eventReceivers.begin(); it != m_eventReceivers.end(); ++it)
 		{
 			(*it)->EventReceiver_OnEvent(event);
 		}
@@ -137,7 +137,7 @@ namespace SB
 	template<typename EventType>
 	void EventManager::SpecificEventManager<EventType>::AttachReceiver(EventReceiver<EventType>* receiver)
 	{
-		for (std::vector< EventReceiver<EventType>* >::iterator it = m_eventReceivers.begin(); it != m_eventReceivers.end(); ++it)
+		for (typename std::vector< EventReceiver<EventType>* >::iterator it = m_eventReceivers.begin(); it != m_eventReceivers.end(); ++it)
 		{
 			if ((*it) == receiver)
 			{
@@ -150,7 +150,7 @@ namespace SB
 	template<typename EventType>
 	void EventManager::SpecificEventManager<EventType>::DetachReceiver(EventReceiver<EventType>* receiver)
 	{
-		for (std::vector< EventReceiver<EventType>* >::iterator it = m_eventReceivers.begin(); it != m_eventReceivers.end(); ++it)
+		for (typename std::vector< EventReceiver<EventType>* >::iterator it = m_eventReceivers.begin(); it != m_eventReceivers.end(); ++it)
 		{
 			if ((*it) == receiver)
 			{

@@ -1,7 +1,7 @@
 /*! \file SBVBO.h
 \brief The VBO interface.*/
 #pragma once
-#include <GL/gl3w.h>
+#include "SBOpenGLHeaders.h"
 
 namespace SB
 {

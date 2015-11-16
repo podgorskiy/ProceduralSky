@@ -222,7 +222,7 @@ void BufferConstructor::ConvertMesh(Mesh* mesh)
 
 	for (std::vector<const SmartVertex>::iterator it = m_vertices.begin(); it != m_vertices.end(); ++it)
 	{
-		std::vector<GeneralType>::iterator itt = (*it).m_vdata.begin(); 
+		std::vector<GeneralType>::const_iterator itt = (*it).m_vdata.begin(); 
 		{
 			GeneralType v = (*itt++);
 

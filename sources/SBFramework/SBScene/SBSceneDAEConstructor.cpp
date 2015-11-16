@@ -61,7 +61,7 @@ void ReadFloatArray(std::vector<float>& data, int& stride, const pugi::xml_node&
 		Tokenizer tokens(varray.child_value());
 		data.clear();
 		const char* token = NULL;
-		while (token = tokens.GetNextToken())
+		while ((token = tokens.GetNextToken()))
 		{
 			data.push_back(static_cast<float>(atof(token)));
 		}
@@ -493,7 +493,7 @@ void SceneDAEConstructor::ReadMesh(const pugi::xml_node& mesh, const std::string
 			Tokenizer tokens(nodePrimitives.child_value());
 			const char* token = NULL;
 			int tokensCount = 0;
-			while (token = tokens.GetNextToken())
+			while ((token = tokens.GetNextToken()))
 			{
 				vmaps->m_indices.push_back(atoi(token));
 				tokensCount++;
@@ -623,7 +623,7 @@ void ReadVector(Tokenizer& tokenizer, float (&output)[count])
 	{
 		const char* tokenDefault = "0";
 		const char* token = "0";
-		if (token = tokenizer.GetNextToken())
+		if ((token = tokenizer.GetNextToken()))
 		{
 			tokenDefault = token;
 		}
@@ -638,8 +638,8 @@ void SceneDAEConstructor::AddChild(const pugi::xml_node& nodeE, Node* parent, Sc
 	{
 		int count = parent->GetChildCount();
 		char id[20];
-		itoa(count, id, 20);
-		name = std::string(parent->GetName().c_str()) + "-" + id;
+		sprintf(id,"%d",count);
+		name = parent->GetName() + "-" + id;
 	}
 	else
 	{

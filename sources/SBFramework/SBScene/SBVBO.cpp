@@ -1,5 +1,5 @@
 #include "SBVBO.h"
-#include <GL/gl3w.h>
+
 #include <cstdlib>
 #include <iostream>
 

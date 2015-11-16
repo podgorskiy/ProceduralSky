@@ -13,14 +13,13 @@
 #include "SBColorUtils.h"
 #include "SBEventManager.h"
 #include "SBTimer/SBScopeTinyProfiler.h"
-
+#include "SBOpenGLHeaders.h"
 
 #include "ImGuiBinding.h"
 #include "CameraFreeFlightController.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
-#include <GL/gl3w.h>
 #include <iostream>
 #include <cstdlib>
 #include <vector>
