@@ -1,6 +1,5 @@
 import fnmatch
 import os
-import sys
 import time
 import atexit
 from SCons.Defaults import *
