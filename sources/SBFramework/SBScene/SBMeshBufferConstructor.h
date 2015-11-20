@@ -59,10 +59,11 @@ namespace SB
 		void ConvertMesh(Mesh* mesh);
 
 	private:
-		unsigned int GetIndex(const std::vector<unsigned int>& links);
 		unsigned int PushVertex(const SmartVertex& v);
 
+		int Hash(const std::vector<unsigned int>& links);
+
 		std::vector<const SmartVertex> m_vertices;
-		std::map<std::vector<unsigned int>, unsigned int> m_links;
+		std::map<int, unsigned int> m_links;
 	};
 }

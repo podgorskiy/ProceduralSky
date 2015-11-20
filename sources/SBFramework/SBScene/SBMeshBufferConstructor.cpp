@@ -2,6 +2,9 @@
 #include "SBMesh.h"
 #include "SBCommon.h"
 #include <cassert>
+#include <xxhash.h>
+
+#include "SBTimer/SBScopeTinyProfiler.h"
 
 using namespace SB;
 
@@ -77,28 +80,27 @@ GeneralType::GeneralType(glm::vec4 x)
 	m_vec4 = x;
 }
 
-unsigned int BufferConstructor::GetIndex(const std::vector<unsigned int>& links)
+int BufferConstructor::Hash(const std::vector<unsigned int>& links)
 {
-	std::map<std::vector<unsigned int>, unsigned int>::iterator it = m_links.find(links);
-	if (it != m_links.end())
-	{
-		return it->second;
-	}
-	return -1;
+	int hash = XXH32(&links[0], links.size() * sizeof(unsigned int), 0);
+	return hash;
 }
 
 unsigned int BufferConstructor::PushVertex(const SmartVertex& v)
 {
-	unsigned index = GetIndex(v.m_links);
-	if (index != -1)
+	int hash = Hash(v.m_links);
+
+	std::map<int, unsigned int>::iterator lb = m_links.lower_bound(hash);
+
+	if (lb != m_links.end() && !(m_links.key_comp()(hash, lb->first)))
 	{
-		return index;
+		return lb->second;
 	}
 	else
 	{
-		index = m_vertices.size();
+		unsigned int index = m_vertices.size();
 		m_vertices.push_back(v);
-		m_links[v.m_links] = index;
+		m_links.insert(lb, std::map<int, unsigned int>::value_type(hash, index));
 		return index;
 	}
 }
@@ -109,6 +111,8 @@ void BufferConstructor::ConvertMesh(Mesh* mesh)
 	SafeDeleteArray(mesh->m_rawShortIndices);
 	SafeDeleteArray(mesh->m_rawbuffer);
 	Mesh::VerticesMaps*(& vmaps) = mesh->m_verticesMaps;
+	m_vertices.clear();
+	m_links.clear();
 
 	int indicesCount = 0;
 	bool integer = false;
@@ -121,7 +125,7 @@ void BufferConstructor::ConvertMesh(Mesh* mesh)
 		}
 	}
 
-	mesh->m_indeciesCount = vmaps->m_indices.size();
+	mesh->m_indeciesCount = vmaps->m_indices.size() / mesh->m_stride;
 	if (integer)
 	{
 		mesh->m_rawIntIndices = new unsigned int[mesh->m_indeciesCount];
@@ -130,54 +134,60 @@ void BufferConstructor::ConvertMesh(Mesh* mesh)
 	{
 		mesh->m_rawShortIndices = new unsigned short[mesh->m_indeciesCount];
 	}
-	
-	for (std::vector<int>::iterator it = vmaps->m_indices.begin(); it != vmaps->m_indices.end();)
+
 	{
 		SmartVertex vertex;
 
-		if(mesh->m_voffset != -1)
+		for (std::vector<int>::iterator it = vmaps->m_indices.begin(); it != vmaps->m_indices.end();)
 		{
-			int posIndex = *(it + mesh->m_voffset);
-			vertex.m_vdata.push_back(vmaps->m_vertices[posIndex]);
-			vertex.m_links.push_back(posIndex);
-		}
-		if(mesh->m_noffset != -1)
-		{
-			int normalIndex = *(it + mesh->m_noffset);
-			vertex.m_vdata.push_back(vmaps->m_normals[normalIndex]);
-			vertex.m_links.push_back(normalIndex);
-		}
-		if(mesh->m_coffset != -1)
-		{
-			int colorIndex = *(it + mesh->m_coffset);
-			vertex.m_vdata.push_back(vmaps->m_color[colorIndex]);
-			vertex.m_links.push_back(colorIndex);
-		}
-		if(mesh->m_toffset1 != -1)
-		{
-			int tex1Index = *(it + mesh->m_toffset1);
-			vertex.m_vdata.push_back(vmaps->m_textcoord1[tex1Index]);
-			vertex.m_links.push_back(tex1Index);
-		}
-		if(mesh->m_toffset2 != -1)
-		{
-			int tex2Index = *(it + mesh->m_toffset2);
-			vertex.m_vdata.push_back(vmaps->m_textcoord2[tex2Index]);
-			vertex.m_links.push_back(tex2Index);
+			vertex.m_links.clear();
+			vertex.m_vdata.clear();
+
+			if (mesh->m_voffset != -1)
+			{
+				int posIndex = *(it + mesh->m_voffset);
+				vertex.m_vdata.push_back(vmaps->m_vertices[posIndex]);
+				vertex.m_links.push_back(posIndex);
+			}
+			if (mesh->m_noffset != -1)
+			{
+				int normalIndex = *(it + mesh->m_noffset);
+				vertex.m_vdata.push_back(vmaps->m_normals[normalIndex]);
+				vertex.m_links.push_back(normalIndex);
+			}
+			if (mesh->m_coffset != -1)
+			{
+				int colorIndex = *(it + mesh->m_coffset);
+				vertex.m_vdata.push_back(vmaps->m_color[colorIndex]);
+				vertex.m_links.push_back(colorIndex);
+			}
+			if (mesh->m_toffset1 != -1)
+			{
+				int tex1Index = *(it + mesh->m_toffset1);
+				vertex.m_vdata.push_back(vmaps->m_textcoord1[tex1Index]);
+				vertex.m_links.push_back(tex1Index);
+			}
+			if (mesh->m_toffset2 != -1)
+			{
+				int tex2Index = *(it + mesh->m_toffset2);
+				vertex.m_vdata.push_back(vmaps->m_textcoord2[tex2Index]);
+				vertex.m_links.push_back(tex2Index);
+			}
+
+			it += mesh->m_stride;
+
+			unsigned int index = PushVertex(vertex);
+
+			if (integer)
+			{
+				mesh->m_rawIntIndices[indicesCount++] = index;
+			}
+			else
+			{
+				mesh->m_rawShortIndices[indicesCount++] = static_cast<unsigned short>(index);
+			}
 		}
 
-		it += mesh->m_stride;
-
-		unsigned int index = PushVertex(vertex);
-
-		if (integer)
-		{
-			mesh->m_rawIntIndices[indicesCount++] = index;
-		}
-		else
-		{
-			mesh->m_rawShortIndices[indicesCount++] = static_cast<unsigned short>(index);
-		}
 	}
 	
 	int offset = 0;
@@ -192,6 +202,7 @@ void BufferConstructor::ConvertMesh(Mesh* mesh)
 	{
 		mesh->m_noffset = offset;
 		int size = sizeof(int); // 3 bytes + align
+		//int size = 3 * sizeof(float);
 		offset += size;
 	}
 	if(mesh->m_coffset != -1)
@@ -244,6 +255,12 @@ void BufferConstructor::ConvertMesh(Mesh* mesh)
 				qnormal.y = static_cast<char>(std::floor(normal.y));
 				qnormal.z = static_cast<char>(std::floor(normal.z));
 				mesh->m_rawbuffer[rawbufferPointer++] = normalFloat;
+				/*
+				normal = glm::normalize(normal);
+				mesh->m_rawbuffer[rawbufferPointer++] = normal.x;
+				mesh->m_rawbuffer[rawbufferPointer++] = normal.y;
+				mesh->m_rawbuffer[rawbufferPointer++] = normal.z;
+				*/
 			}
 			if(mesh->m_coffset != -1)
 			{

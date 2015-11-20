@@ -73,7 +73,6 @@ void VBO::FillVertexBuffer(
 	{
 		glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, VertexArray, GL_STATIC_DRAW);
 	}
-	//std::cout << vertexBufferSize << std::endl;
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -91,7 +90,6 @@ void VBO::FillIndexBuffer(
 	int indexBufferSize = GetIndexSize()*numOfIndices;
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indexArray, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	//std::cout << indexBufferSize << std::endl;
 };
 
 void VBO::BindVBO() const

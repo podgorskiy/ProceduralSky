@@ -11,8 +11,8 @@
 void ImGuiBinding::Init()
 {
 	m_shader = new SB::Shader;
-	SB::CFile fileShaderV("shaders/ImGUI.vs", SB::IFile::FILE_READ);
-	SB::CFile fileShaderF("shaders/ImGUI.fs", SB::IFile::FILE_READ);
+	SB::CFile fileShaderV("data/shaders/ImGUI.vs", SB::IFile::FILE_READ);
+	SB::CFile fileShaderF("data/shaders/ImGUI.fs", SB::IFile::FILE_READ);
 	m_shader->CreateProgramFrom("ImGuiShader", &fileShaderV, &fileShaderF);
 
 	u_texture = m_shader->GetUniformID("u_texture");
@@ -26,6 +26,7 @@ void ImGuiBinding::Init()
 	unsigned char* pixels;
 	int width, height;
 	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
+	
 
 	// Create OpenGL texture
 	glGenTextures(1, &m_fontTexture);
@@ -90,8 +91,8 @@ void ImGuiBinding::Render()
 	GLint last_array_buffer; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
 	GLint last_element_array_buffer; glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
 	GLint last_vertex_array; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
-	GLint last_blend_src; glGetIntegerv(GL_BLEND_SRC, &last_blend_src);
-	GLint last_blend_dst; glGetIntegerv(GL_BLEND_DST, &last_blend_dst);
+	//GLint last_blend_src; glGetIntegerv(GL_BLEND_SRC, &last_blend_src);
+	//GLint last_blend_dst; glGetIntegerv(GL_BLEND_DST, &last_blend_dst);
 	GLint last_blend_equation_rgb; glGetIntegerv(GL_BLEND_EQUATION_RGB, &last_blend_equation_rgb);
 	GLint last_blend_equation_alpha; glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &last_blend_equation_alpha);
 	GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
@@ -176,7 +177,7 @@ void ImGuiBinding::Render()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
 	glBindVertexArray(last_vertex_array);
 	glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
-	glBlendFunc(last_blend_src, last_blend_dst);
+	//glBlendFunc(last_blend_src, last_blend_dst);
 	if (last_enable_blend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
 	if (last_enable_cull_face) glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
 	if (last_enable_depth_test) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);

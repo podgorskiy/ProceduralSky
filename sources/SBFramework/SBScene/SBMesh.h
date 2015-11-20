@@ -9,21 +9,23 @@
 namespace SB
 {
 	class Shader;
+	class Node;
 
 	class Mesh
 	{
 		friend class SceneDAEConstructor;
 		friend class BufferConstructor;
-		friend class SceneSerializer;
+		friend class Serializer;
+		friend class Utils;
 	public:
 
 		struct VerticesMaps
 		{
-			std::map<int, glm::vec3> m_vertices;
-			std::map<int, glm::vec3> m_normals;
-			std::map<int, glm::vec3> m_color;
-			std::map<int, glm::vec2> m_textcoord1;
-			std::map<int, glm::vec2> m_textcoord2;
+			std::vector<glm::vec3> m_vertices;
+			std::vector<glm::vec3> m_normals;
+			std::vector<glm::vec3> m_color;
+			std::vector<glm::vec2> m_textcoord1;
+			std::vector<glm::vec2> m_textcoord2;
 			std::vector<int> m_indices;
 		};
 

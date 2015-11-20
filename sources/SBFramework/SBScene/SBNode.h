@@ -8,7 +8,6 @@
 
 namespace SB
 {
-	class Scene;
 	class Mesh;
 
 	class Node
@@ -16,7 +15,7 @@ namespace SB
 	public:
 		Node();
 		Node(const char* name);
-		Node(const char* name, Scene& root);
+		Node(const char* name, Node& root);
 
 		~Node();
 
@@ -28,8 +27,8 @@ namespace SB
 		int					GetChildCount() const;
 		Node*				GetChild(const std::string& name);
 		Node*				GetChild(const char* name);
-		Scene* 				GetScene() const				{ return m_root; };
-		void 				SetScene(Scene* scene);
+		Node* 				GetRoot() const				{ return m_root; };
+		void 				SetRoot(Node* root);
 		const std::string&	GetName() const					{ return m_name; };
 		void				SetName(const std::string& name){ m_name = name; };
 		void				SetParent(Node* parent)			{ m_parent = parent; };
@@ -38,7 +37,8 @@ namespace SB
 		void				SetMeshs(const std::vector<Mesh*>& meshs)			{ m_meshs = meshs; };
 		const std::vector<Mesh*>& GetMeshs() const			{ return m_meshs; };
 		void				PushMesh(Mesh* mesh)			{ m_meshs.push_back(mesh); };
-		
+		Node*				GetNodeByName(const std::string& name);
+
 	public:
 		//node transformation methods
 		const glm::mat4& 		GetLocalTransform() const					{ return m_relativeTransform; };
@@ -55,7 +55,7 @@ namespace SB
 		void					SetRenderable(bool v)						{ m_isRenderable = v; };
 
 	protected:
-		Scene*				m_root;
+		Node*				m_root;
 		Node*				m_parent;
 		SBNodeContanier		m_members;
 		mutable glm::mat4	m_absoluteTransform;
