@@ -14,16 +14,14 @@
 #include "SBEventManager.h"
 #include "SBTimer/SBScopeTinyProfiler.h"
 #include "SBOpenGLHeaders.h"
-
-#include "ImGuiBinding.h"
-#include "CameraFreeFlightController.h"
+#include "SBImGuiBinding.h"
+#include "SBCameraFreeFlightController.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
 #include <iostream>
 #include <cstdlib>
 #include <vector>
-
 
 int Appication::Init()
 {
@@ -83,22 +81,22 @@ int Appication::Init()
 	m_camera->SetLookAtPoint(lookAt);
 
 	m_eventManager = new SB::EventManager;
-	m_imGuiBinding = new ImGuiBinding;
+	m_imGuiBinding = new SB::ImGuiBinding;
 
 	SetUpScale();
 	m_imGuiBinding->Init();
 
-	m_eventManager->AttachReceiver<Event::OnMouseButtonEvent>(m_imGuiBinding);
-	m_eventManager->AttachReceiver<Event::OnMouseMoveEvent>(m_imGuiBinding);
-	m_eventManager->AttachReceiver<Event::OnKeyEvent>(m_imGuiBinding);
+	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseButtonEvent>(m_imGuiBinding);
+	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseMoveEvent>(m_imGuiBinding);
+	m_eventManager->AttachReceiver<SB::BasicEvents::OnKeyEvent>(m_imGuiBinding);
 
-	m_cameraController = new CameraFreeFlightController;
+	m_cameraController = new SB::CameraFreeFlightController;
 	m_cameraController->AttachCamera(m_camera);
 	m_cameraController->SetSpeed(0.5f);
 
-	m_eventManager->AttachReceiver<Event::OnMouseButtonEvent>(m_cameraController);
-	m_eventManager->AttachReceiver<Event::OnMouseMoveEvent>(m_cameraController);
-	m_eventManager->AttachReceiver<Event::OnKeyEvent>(m_cameraController);
+	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseButtonEvent>(m_cameraController);
+	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseMoveEvent>(m_cameraController);
+	m_eventManager->AttachReceiver<SB::BasicEvents::OnKeyEvent>(m_cameraController);
 	
 	m_proceduralSky.Init(32, 32);
 	m_proceduralSky.SetSkyDirection(glm::vec3(0.0f, 0.0f, 1.0f));
@@ -111,7 +109,7 @@ int Appication::Init()
 	return EXIT_SUCCESS;
 }
 
-void Appication::Update(const ScreenBufferSizes& screenBufferSizes, float deltaTime)
+void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float deltaTime)
 {
 	m_imGuiBinding->NewFrame(screenBufferSizes);
 	DrawGUI();
@@ -228,17 +226,17 @@ SB::EventManager* Appication::GetEventManager()
 	return m_eventManager;
 }
 
-void Appication::OnMousePressed(const Event::OnMouseButtonEvent& mouseEvent)
+void Appication::OnMousePressed(const SB::BasicEvents::OnMouseButtonEvent& mouseEvent)
 {
 	GetEventManager()->Dispatch(mouseEvent);
 }
 
-void Appication::OnMouseMove(const Event::OnMouseMoveEvent& mouseEvent)
+void Appication::OnMouseMove(const SB::BasicEvents::OnMouseMoveEvent& mouseEvent)
 {
 	GetEventManager()->Dispatch(mouseEvent);
 }
 
-void Appication::OnKeyPressed(const Event::OnKeyEvent& keyEvent)
+void Appication::OnKeyPressed(const SB::BasicEvents::OnKeyEvent& keyEvent)
 {
 	GetEventManager()->Dispatch(keyEvent);
 }

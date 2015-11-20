@@ -1,12 +1,13 @@
-#include "ImGuiBinding.h"
+#include "SBImGuiBinding.h"
 #include "SBCFile.h"
 #include "SBShader/SBShader.h"
 #include "SBOpenGLHeaders.h"
-#include "Appication.h"
-#include "Events.h"
+#include "SBBasicEvents.h"
 
 #include <imgui.h>
 #include <GLFW/glfw3.h>
+
+using namespace SB;
 
 void ImGuiBinding::Init()
 {
@@ -69,6 +70,7 @@ void ImGuiBinding::NewFrame(const ScreenBufferSizes& screenBufferSizes)
 
 	// Setup display size (every frame to accommodate for window resizing)
 	io.DisplaySize = ImVec2((float)screenBufferSizes.m_windowWidth, (float)screenBufferSizes.m_windowHeight);
+
 	io.DisplayFramebufferScale = ImVec2((float)screenBufferSizes.m_framebufferWidth / screenBufferSizes.m_windowWidth,
 		(float)screenBufferSizes.m_framebufferHeight / screenBufferSizes.m_windowHeight);
 
@@ -185,24 +187,24 @@ void ImGuiBinding::Render()
 	glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
 }
 
-void ImGuiBinding::EventReceiver_OnEvent(const Event::OnMouseButtonEvent& mouseButtonEvent)
+void ImGuiBinding::EventReceiver_OnEvent(const BasicEvents::OnMouseButtonEvent& mouseButtonEvent)
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[mouseButtonEvent.button] = mouseButtonEvent.action == Event::ACTION_PRESS;
+	io.MouseDown[mouseButtonEvent.button] = mouseButtonEvent.action == BasicEvents::ACTION_PRESS;
 }
 
-void ImGuiBinding::EventReceiver_OnEvent(const Event::OnMouseMoveEvent& mouseButtonEvent)
+void ImGuiBinding::EventReceiver_OnEvent(const BasicEvents::OnMouseMoveEvent& mouseButtonEvent)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.MousePos = ImVec2(mouseButtonEvent.x, mouseButtonEvent.y);
 }
 
-void ImGuiBinding::EventReceiver_OnEvent(const Event::OnKeyEvent& keyEvent)
+void ImGuiBinding::EventReceiver_OnEvent(const BasicEvents::OnKeyEvent& keyEvent)
 {
 	ImGuiIO& io = ImGui::GetIO();
-	if (keyEvent.action == Event::ACTION_PRESS)
+	if (keyEvent.action == BasicEvents::ACTION_PRESS)
 		io.KeysDown[keyEvent.rawKey] = true;
-	if (keyEvent.action == Event::ACTION_RELEASE)
+	if (keyEvent.action == BasicEvents::ACTION_RELEASE)
 		io.KeysDown[keyEvent.rawKey] = false;
 
 	io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];

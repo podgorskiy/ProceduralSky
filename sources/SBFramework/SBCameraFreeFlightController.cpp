@@ -1,6 +1,8 @@
-#include "CameraFreeFlightController.h"
+#include "SBCameraFreeFlightController.h"
 #include "SBCamera.h" 
 #include <glm/gtx/rotate_vector.hpp>
+
+using namespace SB;
 
 CameraFreeFlightController::CameraFreeFlightController() :
 	m_camera(NULL), 
@@ -12,43 +14,43 @@ CameraFreeFlightController::CameraFreeFlightController() :
 	m_drag(false)
 {}
 
-void CameraFreeFlightController::EventReceiver_OnEvent(const Event::OnMouseButtonEvent& mouseButtonEvent)
+void CameraFreeFlightController::EventReceiver_OnEvent(const BasicEvents::OnMouseButtonEvent& mouseButtonEvent)
 {
-	if (mouseButtonEvent.action == Event::ACTION_PRESS)
+	if (mouseButtonEvent.action == BasicEvents::ACTION_PRESS)
 	{
-		if (mouseButtonEvent.button == Event::MOUSE_BUTTON_LEFT)
+		if (mouseButtonEvent.button == BasicEvents::MOUSE_BUTTON_LEFT)
 		{
 			m_drag = true;
 		}
 	}
-	else if (mouseButtonEvent.action == Event::ACTION_RELEASE)
+	else if (mouseButtonEvent.action == BasicEvents::ACTION_RELEASE)
 	{
-		if (mouseButtonEvent.button == Event::MOUSE_BUTTON_LEFT)
+		if (mouseButtonEvent.button == BasicEvents::MOUSE_BUTTON_LEFT)
 		{
 			m_drag = false;
 		}
 	}
 }
 
-void CameraFreeFlightController::EventReceiver_OnEvent(const Event::OnKeyEvent& keyEvent)
+void CameraFreeFlightController::EventReceiver_OnEvent(const BasicEvents::OnKeyEvent& keyEvent)
 {
-	if (keyEvent.action != Event::ACTION_PRESS && keyEvent.action != Event::ACTION_RELEASE)
+	if (keyEvent.action != BasicEvents::ACTION_PRESS && keyEvent.action != BasicEvents::ACTION_RELEASE)
 	{
 		return;
 	}
 	switch (keyEvent.key)
 	{
-	case Event::KEY_W:
-		m_moveForward = keyEvent.action == Event::ACTION_PRESS;
+	case BasicEvents::KEY_W:
+		m_moveForward = keyEvent.action == BasicEvents::ACTION_PRESS;
 		break;
-	case Event::KEY_A:
-		m_moveLeft = keyEvent.action == Event::ACTION_PRESS;
+	case BasicEvents::KEY_A:
+		m_moveLeft = keyEvent.action == BasicEvents::ACTION_PRESS;
 		break;
-	case Event::KEY_S:
-		m_moveBackward = keyEvent.action == Event::ACTION_PRESS;
+	case BasicEvents::KEY_S:
+		m_moveBackward = keyEvent.action == BasicEvents::ACTION_PRESS;
 		break;
-	case Event::KEY_D:
-		m_moveRight = keyEvent.action == Event::ACTION_PRESS;
+	case BasicEvents::KEY_D:
+		m_moveRight = keyEvent.action == BasicEvents::ACTION_PRESS;
 		break;
 	}
 }
@@ -81,7 +83,7 @@ void CameraFreeFlightController::Update(float deltaTime, bool blockDrag)
 	}
 }
 
-void CameraFreeFlightController::EventReceiver_OnEvent(const Event::OnMouseMoveEvent& mouseButtonEvent)
+void CameraFreeFlightController::EventReceiver_OnEvent(const BasicEvents::OnMouseMoveEvent& mouseButtonEvent)
 {
 	glm::vec2 newPosition(mouseButtonEvent.x, mouseButtonEvent.y);
 	glm::vec2 delta = newPosition - m_lastPosition;

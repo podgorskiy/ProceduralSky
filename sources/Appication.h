@@ -1,16 +1,8 @@
 #pragma once
 #include "SBDynamicData/SBDynamicData.h"
-#include "Events.h"
+#include "SBBasicEvents.h"
 #include "ProceduralSky.h"
 #include "SunController.h"
-
-struct ScreenBufferSizes
-{
-	int m_framebufferWidth;
-	int m_framebufferHeight;
-	int m_windowWidth;
-	int m_windowHeight;
-};
 
 namespace SB
 {
@@ -19,22 +11,22 @@ namespace SB
 	class Node;
 	class SceneRenderer;
 	class Camera;
+	class ImGuiBinding;
+	class CameraFreeFlightController;
+	struct ScreenBufferSizes;
 }
-
-class ImGuiBinding;
-class CameraFreeFlightController;
 
 class Appication
 {
 public:
 	
 	int Init();
-	void Update(const ScreenBufferSizes& screenBufferSizes, float deltaTime);
+	void Update(const SB::ScreenBufferSizes& screenBufferSizes, float deltaTime);
 	SB::EventManager* GetEventManager();
 
-	void OnMousePressed(const Event::OnMouseButtonEvent& mouseEvent);
-	void OnMouseMove(const Event::OnMouseMoveEvent& mouseEvent);
-	void OnKeyPressed(const Event::OnKeyEvent& keyEvent);
+	void OnMousePressed(const SB::BasicEvents::OnMouseButtonEvent& mouseEvent);
+	void OnMouseMove(const SB::BasicEvents::OnMouseMoveEvent& mouseEvent);
+	void OnKeyPressed(const SB::BasicEvents::OnKeyEvent& keyEvent);
 
 	void DrawGUI();
 
@@ -46,10 +38,10 @@ private:
 
 	SB::SceneRenderer* m_sceneRenderer;
 	SB::Camera* m_camera;
-	CameraFreeFlightController* m_cameraController;
+	SB::CameraFreeFlightController* m_cameraController;
 
 	SB::EventManager* m_eventManager;
-	ImGuiBinding* m_imGuiBinding;
+	SB::ImGuiBinding* m_imGuiBinding;
 	SB::Shader* m_terrainShader;
 	SB::Shader* m_sunShader;
 	ProceduralSky m_proceduralSky;
