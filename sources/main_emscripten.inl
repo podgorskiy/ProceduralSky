@@ -6,8 +6,9 @@
 #include <cstdlib>
 
 #include "Appication.h"
+#include "SBImGuiBinding.h"
 #include "SBEventManager.h"
-#include "Events.h"
+#include "SBBasicEvents.h"
 
 Appication app;
 
@@ -29,30 +30,30 @@ static EM_BOOL touchCb(int eventType, const EmscriptenTouchEvent* event, void* u
 
 static void MouseButtonCallback(int button, int action)
 {
-	Event::ButtonType buttonType = Event::MOUSE_BUTTON_NONE;
-	Event::ActionType actionType = Event::ACTION_NONE;
+	SB::BasicEvents::ButtonType buttonType = SB::BasicEvents::MOUSE_BUTTON_NONE;
+	SB::BasicEvents::ActionType actionType = SB::BasicEvents::ACTION_NONE;
 	switch (button)
 	{
 	case GLFW_MOUSE_BUTTON_LEFT:
-		buttonType = Event::MOUSE_BUTTON_LEFT;
+		buttonType = SB::BasicEvents::MOUSE_BUTTON_LEFT;
 		break;
 	case GLFW_MOUSE_BUTTON_RIGHT:
-		buttonType = Event::MOUSE_BUTTON_RIGHT;
+		buttonType = SB::BasicEvents::MOUSE_BUTTON_RIGHT;
 		break;
 	case GLFW_MOUSE_BUTTON_MIDDLE:
-		buttonType = Event::MOUSE_BUTTON_MIDDLE;
+		buttonType = SB::BasicEvents::MOUSE_BUTTON_MIDDLE;
 		break;
 	}
 	switch (action)
 	{
 	case GLFW_PRESS:
-		actionType = Event::ACTION_PRESS;
+		actionType = SB::BasicEvents::ACTION_PRESS;
 		break;
 	case GLFW_RELEASE:
-		actionType = Event::ACTION_RELEASE;
+		actionType = SB::BasicEvents::ACTION_RELEASE;
 		break;
 	}
-	Event::OnMouseButtonEvent buttonEvent;
+	SB::BasicEvents::OnMouseButtonEvent buttonEvent;
 	buttonEvent.button = buttonType;
 	buttonEvent.action = actionType;
 	app.OnMousePressed(buttonEvent);
@@ -60,7 +61,7 @@ static void MouseButtonCallback(int button, int action)
 
 static void MouseMoveCallback(int x, int y)
 {
-	Event::OnMouseMoveEvent moveEvent;
+	SB::BasicEvents::OnMouseMoveEvent moveEvent;
 	moveEvent.x = x;
 	moveEvent.y = y;
 	app.OnMouseMove(moveEvent);
@@ -73,30 +74,30 @@ static void ScrollCallback(int)
 
 static void KeyCallback(int key, int action)
 {
-	Event::OnKeyEvent keyEvent;
+	SB::BasicEvents::OnKeyEvent keyEvent;
 	switch (action)
 	{
 	case GLFW_PRESS:
-		keyEvent.action = Event::ACTION_PRESS;
+		keyEvent.action = SB::BasicEvents::ACTION_PRESS;
 		break;
 	case GLFW_RELEASE:
-		keyEvent.action = Event::ACTION_RELEASE;
+		keyEvent.action = SB::BasicEvents::ACTION_RELEASE;
 		break;
 	}	
 	
 	switch (key)
 	{
 	case 'W':
-		keyEvent.key = Event::KEY_W;
+		keyEvent.key = SB::BasicEvents::KEY_W;
 		break;
 	case 'A':
-		keyEvent.key = Event::KEY_A;
+		keyEvent.key = SB::BasicEvents::KEY_A;
 		break;
 	case 'S':
-		keyEvent.key = Event::KEY_S;
+		keyEvent.key = SB::BasicEvents::KEY_S;
 		break;
 	case 'D':
-		keyEvent.key = Event::KEY_D;
+		keyEvent.key = SB::BasicEvents::KEY_D;
 		break;
 	}
 	
@@ -121,16 +122,16 @@ void Iteration()
 
 	static double lastFrame = 0;
 
-	ScreenBufferSizes ScreenBufferSizes;
-	glfwGetWindowSize(&ScreenBufferSizes.m_windowWidth, &ScreenBufferSizes.m_windowHeight);
-	ScreenBufferSizes.m_framebufferWidth = ScreenBufferSizes.m_windowWidth;
-	ScreenBufferSizes.m_framebufferHeight = ScreenBufferSizes.m_windowHeight;
+	SB::ScreenBufferSizes screenBufferSizes;
+	glfwGetWindowSize(&screenBufferSizes.m_windowWidth, &screenBufferSizes.m_windowHeight);
+	screenBufferSizes.m_framebufferWidth = screenBufferSizes.m_windowWidth;
+	screenBufferSizes.m_framebufferHeight = screenBufferSizes.m_windowHeight;
 
 	double currentFrame = glfwGetTime();
 	double deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
-	app.Update(ScreenBufferSizes, static_cast<float>(deltaTime));
+	app.Update(screenBufferSizes, static_cast<float>(deltaTime));
 		
 	glfwSwapBuffers();
 	glfwPollEvents();
@@ -240,32 +241,32 @@ EM_BOOL touchCb(int eventType, const EmscriptenTouchEvent* event, void* userData
 		{
 		case EMSCRIPTEN_EVENT_TOUCHMOVE:
 		{
-			Event::OnMouseMoveEvent moveEvent;
+			SB::BasicEvents::OnMouseMoveEvent moveEvent;
 			moveEvent.x = tp->canvasX;
 			moveEvent.y = tp->canvasY;
 			app.OnMouseMove(moveEvent);
 			return true;
 		}
 		case EMSCRIPTEN_EVENT_TOUCHSTART:
-			Event::OnMouseMoveEvent moveEvent;
+			SB::BasicEvents::OnMouseMoveEvent moveEvent;
 			moveEvent.x = tp->canvasX;
 			moveEvent.y = tp->canvasY;
 			app.OnMouseMove(moveEvent);
-			Event::OnMouseButtonEvent buttonEvent;
-			buttonEvent.button = Event::MOUSE_BUTTON_LEFT;
-			buttonEvent.action = Event::ACTION_PRESS;
+			SB::BasicEvents::OnMouseButtonEvent buttonEvent;
+			buttonEvent.button = SB::BasicEvents::MOUSE_BUTTON_LEFT;
+			buttonEvent.action = SB::BasicEvents::ACTION_PRESS;
 			app.OnMousePressed(buttonEvent);
 			return true;
 		case EMSCRIPTEN_EVENT_TOUCHEND:
 		case EMSCRIPTEN_EVENT_TOUCHCANCEL:
 		{
-			Event::OnMouseMoveEvent moveEvent;
+			SB::BasicEvents::OnMouseMoveEvent moveEvent;
 			moveEvent.x = tp->canvasX;
 			moveEvent.y = tp->canvasY;
 			app.OnMouseMove(moveEvent);
-			Event::OnMouseButtonEvent buttonEvent;
-			buttonEvent.button = Event::MOUSE_BUTTON_LEFT;
-			buttonEvent.action = Event::ACTION_RELEASE;
+			SB::BasicEvents::OnMouseButtonEvent buttonEvent;
+			buttonEvent.button = SB::BasicEvents::MOUSE_BUTTON_LEFT;
+			buttonEvent.action = SB::BasicEvents::ACTION_RELEASE;
 			app.OnMousePressed(buttonEvent); 
 			return true;
 		}
