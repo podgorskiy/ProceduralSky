@@ -1,4 +1,5 @@
 #include "SBCFile.h"
+#include "SBCommon.h"
 
 #include <cstdio>
 
@@ -27,6 +28,10 @@ bool CFile::Open(const std::string& filename, MODE mode)
 		std::fclose(file);
 	}
 	file = std::fopen(filename.c_str(), GetMode(mode));
+	if (file == NULL)
+	{
+		LOGW("File not found: %s", filename.c_str());
+	}
 	return file != NULL;
 };
 

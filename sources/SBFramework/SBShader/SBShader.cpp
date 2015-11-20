@@ -11,17 +11,28 @@ void Shader::PrintSource(const char* source)
 {
 	int i;
 	int size = strlen(source);
-	char* t = new char[size];
+	char* t = new char[size + 1];
 	int j=0;
 	int line = 1;
 	for(i=0; i<size; i++)
 	{
-		t[j]=source[i];
-		if ( (t[j++]=='\n') || (i==size-1) )
+		t[j] = source[i];
+		bool lineBreak = t[j] == '\n';
+		bool endOfSource = i == (size - 1);
+
+		if (lineBreak || endOfSource)
 		{
-			t[--j]=0;
+			if (endOfSource)
+			{
+				j++;
+			}
+			t[j]=0;
 			j=0;
-			printf("%3d:   %s\n",line++,t);
+			printf("%3d:\t%s\n",line++,t);
+		}
+		else
+		{
+			++j;
 		}
 	}
 	delete[] t;

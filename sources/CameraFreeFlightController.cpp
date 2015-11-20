@@ -8,7 +8,8 @@ CameraFreeFlightController::CameraFreeFlightController() :
 	m_moveBackward(false), 
 	m_moveLeft(false), 
 	m_moveRight(false),
-	m_speed(1.0f)
+	m_speed(1.0f),
+	m_drag(false)
 {}
 
 void CameraFreeFlightController::EventReceiver_OnEvent(const Event::OnMouseButtonEvent& mouseButtonEvent)
