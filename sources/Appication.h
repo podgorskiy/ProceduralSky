@@ -16,7 +16,6 @@ namespace SB
 {
 	class EventManager;
 	class Shader;
-	class Scene;
 	class Node;
 }
 
@@ -36,7 +35,7 @@ public:
 
 private:
 	float m_time;
-	SB::Scene* m_rootScene;
+	SB::Node* m_rootScene;
 	SB::Node* m_sun;
 
 	SB::EventManager* m_eventManager;
@@ -46,4 +45,6 @@ private:
 	ProceduralSky m_proceduralSky;
 	SunController m_sunController;
 	SB::DynamicLighteningProperties m_dynamicLightening;
+	float m_fontSize;
+	float m_scale;
 };

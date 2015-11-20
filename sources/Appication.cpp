@@ -1,10 +1,10 @@
-#include "Appication.h"
+﻿#include "Appication.h"
 
 #include "SBShader/SBShader.h"
 #include "SBScene/SBSceneDAEConstructor.h"
 #include "SBScene/SBMeshBufferConstructor.h"
-#include "SBScene/SBScene.h"
 #include "SBScene/SBMesh.h"
+#include "SBScene/SBNode.h"
 #include "SBScene/SBSceneRenderer.h"
 #include "SBScene/SBSceneSerializer.h"
 #include "SBScene/SBSceneUtils.h" 
@@ -24,24 +24,26 @@
 #include <cstdlib>
 #include <vector>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
 SB::SceneRenderer sr;
 
 SB::Camera camera;
 CameraFreeFlightController cameraController;
-
-SB::Scene* city;
-SB::SceneRenderer::RenderList cityRenderList;
+SB::SceneRenderer::RenderList renderlist;
 
 void constructCity()
 {
-	SB::Scene* city = new SB::Scene;
+	SB::Node* city = new SB::Node;
 
 	const char* cityParts[] = {
-		
+
+		"casino_backstreet.dae",
 		"strip01.dae",
 		"rich_residential.dae",
 		"airport.dae",
-		"casino_backstreet.dae",
 		"construction.dae",
 		"desert00.dae",
 		"desert01.dae",
@@ -55,35 +57,57 @@ void constructCity()
 		"strip00.dae",
 		"strip02.dae",
 		"strip03.dae"
-	};
+};
 
 
 	for (int i = 0; i < sizeof(cityParts) / sizeof(cityParts[0]); i++)
 	{
 		SB::SceneDAEConstructor sc;
-		sc.OpenDAE(cityParts[i]);
-		SB::Scene* scene = sc.ConstructSBScene();
-		SB::Merge(city, scene);
+		sc.OpenDAE((std::string("city_source/") + cityParts[i]).c_str());
+		SB::Node* scene = sc.ConstructSBScene();
+		SB::Utils::RemoveNodes(scene, "additif_*");
+		SB::Utils::RemoveNodes(scene, "bush_*");
+		SB::Utils::RemoveNodes(scene, "tree_*");
+		SB::Utils::RemoveNodes(scene, "cactus_*");
+		SB::Utils::RemoveNodes(scene, "*__b0_1*");
+		SB::Utils::RemoveNodes(scene, "*__p0_1*");
+		SB::Utils::RemoveNodes(scene, "*__t0_1*");
+		SB::Utils::RemoveNodes(scene, "road_lines_*");
+		SB::Utils::Merge(city, scene);
 	}
-
-	SB::RemoveNodes(city, "additif_*");
-	SB::RemoveNodes(city, "bush_*");
-	SB::RemoveNodes(city, "tree_*");
-	SB::RemoveNodes(city, "cactus_*");
-	SB::RemoveNodes(city, "*__b0_1*");
-	SB::RemoveNodes(city, "*__p0_1*");
-	SB::RemoveNodes(city, "*__t0_1*");
-
+		
 	{
 		SB::CFile file;
-		SB::SceneSerializer serializer;
-		file.Open("city.bdae", SB::IFile::FILE_WRITE);
-		serializer.Serialize(city, &file);
+		SB::Serializer serializer;
+		file.Open("data/city.bdae", SB::IFile::FILE_WRITE);
+		serializer.SerializeScene(city, &file);
 	}
+
+	SB::Utils::PushMeshDataToVideoMemory(city, true);
+	renderlist = sr.RegisterNodes(city);
 }
 
 int Appication::Init()
 {
+	m_fontSize = 15;
+	m_scale = 1;
+#ifdef __EMSCRIPTEN__
+	float devicePixelRatio = EM_ASM_DOUBLE_V(
+	{
+		if (window.devicePixelRatio != undefined)
+		{
+			return window.devicePixelRatio;
+		}
+		else
+		{
+			return 1.0;
+		}
+	}
+	);
+	m_scale = devicePixelRatio;
+	m_fontSize = m_fontSize * devicePixelRatio;
+#endif
+
 	if (gl3wInit())
 	{
 		std::cerr << "failed to initialize OpenGL";
@@ -105,47 +129,85 @@ int Appication::Init()
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	SB::CFile fileTerrainShaderV("shaders/terrain.vs", SB::IFile::FILE_READ);
-	SB::CFile fileTerrainShaderF("shaders/terrain.fs", SB::IFile::FILE_READ);
+	SB::CFile fileTerrainShaderV("data/shaders/terrain.vs", SB::IFile::FILE_READ);
+	SB::CFile fileTerrainShaderF("data/shaders/terrain.fs", SB::IFile::FILE_READ);
 	m_terrainShader = new SB::Shader;
 	m_terrainShader->CreateProgramFrom("terrain", &fileTerrainShaderV, &fileTerrainShaderF);
 
-	SB::CFile fileSunShaderV("shaders/sun.vs", SB::IFile::FILE_READ);
-	SB::CFile fileSunShaderF("shaders/sun.fs", SB::IFile::FILE_READ);
+	SB::CFile fileSunShaderV("data/shaders/sun.vs", SB::IFile::FILE_READ);
+	SB::CFile fileSunShaderF("data/shaders/sun.fs", SB::IFile::FILE_READ);
 	m_sunShader = new SB::Shader;
 	m_sunShader->CreateProgramFrom("terrain", &fileSunShaderV, &fileSunShaderF);
-	
-	SB::SceneDAEConstructor sc;
-	sc.OpenDAE("untitled.dae");
-	m_rootScene = sc.ConstructSBScene();
-	
-	SB::PushMeshDataToVideoMemory(m_rootScene, true);
-
-	m_sun = &m_rootScene->GetNodeByName("Sun");
-	m_sun->DetachNode();
 
 	//constructCity();
+
+	/*
 	{
+		SB::SceneDAEConstructor sc;
+		sc.OpenDAE("data/untitled.dae");
+		m_rootScene = sc.ConstructSBScene();
 		SB::CFile file;
 		SB::SceneSerializer serializer;
-		file.Open("city.bdae", SB::IFile::FILE_READ);
-		city = serializer.DeSerialize(&file);
-
-		SB::PushMeshDataToVideoMemory(city, true);
-		cityRenderList = sr.RegisterNodes(city);
+		file.Open("data/untitled.bdae", SB::IFile::FILE_WRITE);
+		serializer.Serialize(m_rootScene, &file);
+	}*/
+	{
+		SB::CFile file;
+		SB::Serializer serializer;
+		file.Open("data/untitled.bdae", SB::IFile::FILE_READ);
+		m_rootScene = serializer.DeSerializeScene(&file);
 	}
-	
+	SB::Utils::PushMeshDataToVideoMemory(m_rootScene, true);
 
-	SB::CFile dynamicLighteningXML("ProceduralSky.xml", SB::IFile::FILE_READ);
+	{
+		/*
+		SB::CFile file;
+		SB::Serializer serializer;
+		file.Open("city_source/city.bdae", SB::IFile::FILE_READ);
+		SB::Node* city = serializer.DeSerializeScene(&file);
+
+		std::vector<SB::Mesh*> meshList;
+		SB::Utils::MakeFlat(meshList, city);
+		std::vector<SB::Mesh*> batchedMeshList;
+		SB::Utils::BatchMeshes(meshList, batchedMeshList);
+
+		SB::CFile fileBatch;
+		fileBatch.Open("data/city_batch.bdae", SB::IFile::FILE_WRITE);
+		SB::Serializer se;
+		se.SerializeBatchList(batchedMeshList, &fileBatch);
+		*/
+		
+		SB::CFile fileBatch;
+		fileBatch.Open("data/city_batch.bdae", SB::IFile::FILE_READ);
+		SB::Serializer se;
+		std::vector<SB::Mesh*> batchedMeshList;
+		se.DeSerializeBatchList(batchedMeshList, &fileBatch);
+		
+		
+		SB::Utils::PushMeshDataToVideoMemory(batchedMeshList);
+
+		for (int i = 0; i < batchedMeshList.size(); ++i)
+		{
+			glm::mat4 transform(1.0f);
+			renderlist.push_back(SB::SceneRenderer::Entity(transform, batchedMeshList[i]));
+		}
+		//SB::Utils::PushMeshDataToVideoMemory(city, true);
+		//renderlist = sr.RegisterNodes(city);
+	}
+
+	m_sun = m_rootScene->GetNodeByName("Sun");
+	m_sun->DetachNode();
+
+	SB::CFile dynamicLighteningXML("data/ProceduralSky.xml", SB::IFile::FILE_READ);
 	m_dynamicLightening.Load(&dynamicLighteningXML);
 
-	glm::vec3 lookAt(0.0f, 0.0f, 0.0f);
-	glm::vec3 position(10.0f, 10.0f, 10.0f);
+	glm::vec3 lookAt(18146.2715f, 49058.6328f, 23362.9414f);
+	glm::vec3 position(18146.1348f, 49059.5195f, 23363.3848f);
 	glm::vec3 upVector(0, 0, 1);
 
 	camera.SetFOV(60.0f / 180.0f*3.14f);
 	//camera.SetNearFarPlanes(1.0f, 10000.0f);
-	camera.SetNearFarPlanes(100.0f, 300000.0f);
+	camera.SetNearFarPlanes(100.0f, 3000.0f * 100.0f);
 	camera.SetPosition(position);
 	camera.SetUpVector(upVector);
 	camera.SetLookAtPoint(lookAt);
@@ -178,10 +240,14 @@ int Appication::Init()
 void Appication::Update(const ScreenBufferSizes& screenBufferSizes, float deltaTime)
 {
 	m_imGuiBinding->NewFrame(screenBufferSizes);
-	
-	ImGui::Begin("SomeWindow");
-	
-	ImGui::SliderFloat("Time", &m_time, 4.0f, 22.0f);
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.ScrollbarSize = 30 * m_scale;
+	style.FramePadding = ImVec2(10 * m_scale, 5 * m_scale);
+	style.ItemInnerSpacing = ImVec2(10 * m_scale, 5 * m_scale);
+
+	ImGui::Begin("ProceduralSky");
+	ImGui::SetWindowSize(ImVec2(350 * m_scale, 120 * m_scale));
+	ImGui::SliderFloat("Time", &m_time, 5.0f, 22.0f);
 	float latitude = m_sunController.GetLatitude();
 	ImGui::SliderFloat("Latitude ", &latitude, -90.0f, 90.0f);
 	m_sunController.SetLatitude(latitude);
@@ -205,11 +271,16 @@ void Appication::Update(const ScreenBufferSizes& screenBufferSizes, float deltaT
 	m_sunController.SetMonth(static_cast<SunController::Month>(item));
 	bool blockDrag = ImGui::IsMouseHoveringAnyWindow();
 	ImGui::End();
-
+	
 	m_sunController.Update(m_time);
 
 	glViewport(0, 0, screenBufferSizes.m_windowWidth, screenBufferSizes.m_windowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDepthFunc(GL_LESS);
+	glDepthMask(true);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	
 	camera.SetRatio(static_cast<float>(screenBufferSizes.m_windowWidth) / screenBufferSizes.m_windowHeight);
 
@@ -245,15 +316,10 @@ void Appication::Update(const ScreenBufferSizes& screenBufferSizes, float deltaT
 
 	sr.RegisterNodes(m_rootScene);
 	sr.Render(&camera, m_terrainShader);
-
-
-	{
-		SBProfile(Render);
-		sr.Render(cityRenderList, &camera, m_terrainShader);
-	}
+	sr.Render(renderlist, &camera, m_terrainShader);
 
 	m_proceduralSky.Draw(&camera);
-
+	
 	m_imGuiBinding->Render();
 }
 

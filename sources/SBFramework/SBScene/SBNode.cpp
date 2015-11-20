@@ -1,42 +1,34 @@
 #include "SBNode.h"
 #include "SBaabb.h"
 #include "SBCommon.h"
-#include "SBScene.h"
 
 using namespace SB;
 
-Node::Node() : m_isAbsoluteIsDirty(true), m_isRenderable(true), m_parent(NULL)
+Node::Node() : m_isAbsoluteIsDirty(true), m_isRenderable(true), m_parent(NULL), m_root(this)
 {};
 
-Node::Node(const char* name) : m_name(name), m_isAbsoluteIsDirty(true), m_isRenderable(true), m_parent(NULL)
+Node::Node(const char* name) : m_name(name), m_isAbsoluteIsDirty(true), m_isRenderable(true), m_parent(NULL), m_root(this)
 {};
 
-Node::Node(const char* name, Scene& root) : m_name(name), m_root(&root), m_isAbsoluteIsDirty(true), m_isRenderable(true), m_parent(NULL)
+Node::Node(const char* name, Node& root) : m_name(name), m_root(&root), m_isAbsoluteIsDirty(true), m_isRenderable(true), m_parent(NULL)
 {};
 
 void Node::AddChild(Node& child)
 {
-	if (child.GetScene() != GetScene())
-	{
-		child.SetScene(GetScene());
-	}
-	m_members.push_back(&child);
-	if (GetScene() != NULL)
-	{
-		GetScene()->AddToMap(child);
-	}
 	child.DetachNode();
+	m_members.push_back(&child);
 	child.SetParent(this);
+	child.SetRoot(GetRoot());
 }
 
-void Node::SetScene(Scene* scene)
+void Node::SetRoot(Node* scene)
 {
 	m_root = scene;
 	int count = GetChildCount();
 	for (int i = 0; i < count; i++)
 	{
 		Node* n = GetChild(i);
-		n->SetScene(scene);
+		n->SetRoot(scene);
 	}
 }
 
@@ -79,10 +71,12 @@ void Node::DetachNode()
 			if (node == this)
 			{
 				m_parent->m_members.erase(it);
-				return;
+				break;
 			}
 		}
+		SetParent(NULL);
 	}
+	SetRoot(this);
 }
 
 void Node::SetDirty()
@@ -117,4 +111,26 @@ const glm::mat4& Node::GetAbsoluteTransform() const
 
 Node::~Node()
 {
+	for (std::vector<Mesh*>::const_iterator it = m_meshs.begin(); it != m_meshs.end(); ++it)
+	{
+		//delete (*it);
+	}
 };
+
+Node* Node::GetNodeByName(const std::string& name)
+{
+	if (GetName() == name)
+	{
+		return this;
+	}
+	int count = GetChildCount();
+	for (int i = 0; i < count; i++)
+	{
+		Node* node = GetChild(i)->GetNodeByName(name);
+		if (node != NULL)
+		{
+			return node;
+		}
+	}
+	return NULL;
+}

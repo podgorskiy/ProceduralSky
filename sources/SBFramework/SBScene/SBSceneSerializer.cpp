@@ -1,7 +1,6 @@
 #include "SBSceneSerializer.h"
 #include "SBCommon.h"
 #include "SBNode.h"
-#include "SBScene.h"
 #include "SBMesh.h"
 #include "IFile.h"
 
@@ -26,7 +25,7 @@ struct DataChunks
 	};
 };
 
-void SceneSerializer::WriteNode(const Node* node, IFile* file)
+void Serializer::WriteNode(const Node* node, IFile* file)
 {
 	file->WriteInt(DataChunks::NODE);
 	file->WriteString(node->GetName());
@@ -58,7 +57,7 @@ void SceneSerializer::WriteNode(const Node* node, IFile* file)
 	file->WriteInt(DataChunks::NODE_END);
 }
 
-bool SceneSerializer::Serialize(const Node* scene, IFile* file)
+bool Serializer::SerializeScene(const Node* scene, IFile* file)
 {
 	if (!file->Valid())
 	{
@@ -80,13 +79,13 @@ bool SceneSerializer::Serialize(const Node* scene, IFile* file)
 	return true;
 }
 
-SceneSerializer::MeshID SceneSerializer::PushMesh(const Mesh* mesh)
+Serializer::MeshID Serializer::PushMesh(const Mesh* mesh)
 {
 	m_meshs[m_meshID] = mesh;
 	return m_meshID++;
 }
 
-void SceneSerializer::WriteMesh(const Mesh* mesh, MeshID id, IFile* file)
+void Serializer::WriteMesh(const Mesh* mesh, MeshID id, IFile* file)
 {
 	file->WriteInt(DataChunks::MESH);
 	file->WriteInt(id);
@@ -132,7 +131,7 @@ void SceneSerializer::WriteMesh(const Mesh* mesh, MeshID id, IFile* file)
 }
 
 
-Scene* SceneSerializer::DeSerialize(IFile* file)
+Node* Serializer::DeSerializeScene(IFile* file)
 {
 	if (!file->Valid())
 	{
@@ -143,7 +142,7 @@ Scene* SceneSerializer::DeSerialize(IFile* file)
 
 	bool endOfFile = false;
 
-	Scene* root = new Scene;
+	Node* root = new Node;
 
 	m_nodesMeshBindings.clear();
 
@@ -178,7 +177,7 @@ Scene* SceneSerializer::DeSerialize(IFile* file)
 	return root;
 }
 
-void SceneSerializer::ReadNode(Node* node, IFile* file)
+void Serializer::ReadNode(Node* node, IFile* file)
 {
 	std::string name;
 	file->ReadString(name);
@@ -224,7 +223,6 @@ void SceneSerializer::ReadNode(Node* node, IFile* file)
 		case DataChunks::NODE:
 		{
 			Node* child = new Node;
-			child->SetScene(node->GetScene());
 			ReadNode(child, file);
 			node->AddChild(*child);
 			break;
@@ -236,7 +234,7 @@ void SceneSerializer::ReadNode(Node* node, IFile* file)
 	return;
 }
 
-SceneSerializer::MeshID SceneSerializer::ReadMesh(Mesh* mesh, IFile* file)
+Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, IFile* file)
 {
 	int id;
 	file->ReadInt(id);
@@ -305,4 +303,43 @@ SceneSerializer::MeshID SceneSerializer::ReadMesh(Mesh* mesh, IFile* file)
 	assert(!endOfFile);
 
 	return id;
+}
+
+bool Serializer::SerializeBatchList(const std::vector<SB::Mesh*> batchList, IFile* file)
+{
+	if (!file->Valid())
+	{
+		return false;
+	}
+	file->Seek(0);
+	int id = 0;
+	for (std::vector<SB::Mesh*>::const_iterator it = batchList.begin(); it != batchList.end(); ++it)
+	{
+		WriteMesh(*it, id++, file);
+	}
+	return true;
+}
+
+void Serializer::DeSerializeBatchList(std::vector<SB::Mesh*>& batchList, IFile* file)
+{
+	if (!file->Valid())
+	{
+		return;
+	}
+
+	file->Seek(0);
+
+	bool endOfFile = false;
+
+	while (!endOfFile)
+	{
+		int dataType = -1;
+		endOfFile = !file->ReadInt(dataType);
+		if (dataType == DataChunks::MESH)
+		{
+			Mesh* mesh = new Mesh;
+			MeshID id = ReadMesh(mesh, file);
+			batchList.push_back(mesh);
+		}
+	}
 }

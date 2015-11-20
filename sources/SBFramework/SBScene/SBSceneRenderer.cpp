@@ -2,7 +2,7 @@
 
 #include "SBMesh.h"
 #include "SBCommon.h"
-#include "SBScene.h"
+#include "SBNode.h"
 #include "SBCamera.h"
 #include "SBShader/SBShader.h"
 

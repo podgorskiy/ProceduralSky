@@ -2,7 +2,7 @@
 #include "SBMeshBufferConstructor.h"
 
 #include "SBCommon.h"
-#include "SBScene.h"
+#include "SBNode.h"
 #include "SBMesh.h"
 
 #include <glm/gtx/rotate_vector.hpp>
@@ -10,6 +10,8 @@
 #include <fstream>
 #include <algorithm>
 #include <functional>
+
+#include "SBTimer/SBScopeTinyProfiler.h"
 
 using namespace SB;
 
@@ -158,6 +160,11 @@ bool SceneDAEConstructor::OpenDAE(const char* filename)
 	std::streamsize size = file.tellg();
 	file.seekg(0, std::ios::beg);
 
+	if (size < 0)
+	{
+		LOGE("Missing file: %s", filename);
+	}
+
 	m_daeBuffer.resize(static_cast<unsigned int>(size));
 	if (file.read(m_daeBuffer.data(), size))
 	{
@@ -208,7 +215,7 @@ void SceneDAEConstructor::PrintDebugOutput(Node& node, int level, std::vector<bo
 	}
 }
 
-Scene* SceneDAEConstructor::ConstructSBScene()
+Node* SceneDAEConstructor::ConstructSBScene()
 {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_buffer(m_daeBuffer.data(), m_daeBuffer.size());
@@ -238,7 +245,7 @@ Scene* SceneDAEConstructor::ConstructSBScene()
 
 	ReadGeometry(root);
 
-	Scene& scene = *new Scene("root");
+	Node& scene = *new Node("root");
 
 	glm::mat4 ind = glm::mat4();
 	scene.SetLocalTransform(ind);
@@ -450,9 +457,11 @@ void SceneDAEConstructor::ReadMesh(const pugi::xml_node& mesh, const std::string
 			trianglesLists.push_back(node);
 		}
 	}
-	
+		
 	for (std::vector<pugi::xml_node>::iterator it = trianglesLists.begin(); it != trianglesLists.end(); ++it)
 	{
+		int maxIndex = 0;
+
 		MeshUnit unit;
 		SourcesURL& urls = unit.urls;
 		unit.sbmesh = new Mesh;
@@ -495,11 +504,19 @@ void SceneDAEConstructor::ReadMesh(const pugi::xml_node& mesh, const std::string
 			int tokensCount = 0;
 			while ((token = tokens.GetNextToken()))
 			{
-				vmaps->m_indices.push_back(atoi(token));
+				int index = atoi(token);
+				maxIndex = index > maxIndex ? index : maxIndex;
+				vmaps->m_indices.push_back(index);
 				tokensCount++;
 			}
 			unit.sbmesh->m_stride = tokensCount / 3 / count;
 		}
+
+		vmaps->m_color.resize(maxIndex + 1);
+		vmaps->m_normals.resize(maxIndex + 1);
+		vmaps->m_vertices.resize(maxIndex + 1);
+		vmaps->m_textcoord1.resize(maxIndex + 1);
+		vmaps->m_textcoord2.resize(maxIndex + 1);
 
 		buffers.push_back(unit);
 	}
@@ -585,7 +602,7 @@ void SceneDAEConstructor::ReadMesh(const pugi::xml_node& mesh, const std::string
 
 }
 
-void SceneDAEConstructor::ReadScene(const pugi::xml_node& root, Scene& scene)
+void SceneDAEConstructor::ReadScene(const pugi::xml_node& root, Node& scene)
 {
 	pugi::xml_node pElem;
 	//scene url
@@ -631,13 +648,13 @@ void ReadVector(Tokenizer& tokenizer, float (&output)[count])
 	}
 }
 
-void SceneDAEConstructor::AddChild(const pugi::xml_node& nodeE, Node* parent, Scene* root)
+void SceneDAEConstructor::AddChild(const pugi::xml_node& nodeE, Node* parent, Node* root)
 {
 	std::string name;
 	if (nodeE.attribute("name") == NULL)
 	{
 		int count = parent->GetChildCount();
-		char id[20];
+		char id[100];
 		sprintf(id,"%d",count);
 		name = parent->GetName() + "-" + id;
 	}

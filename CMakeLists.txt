@@ -34,7 +34,7 @@ file(GLOB_RECURSE SOURCES sources/*.cpp sources/*.h)
 file(GLOB SOURCES_IMGUI libs/imgui/*.cpp libs/imgui/*.h)
 
 set(LZ4_DIR libs/lz4/lib/)
-set(SOURCES_LZ4 ${LZ4_DIR}lz4.c ${LZ4_DIR}lz4hc.c ${LZ4_DIR}lz4.h ${LZ4_DIR}lz4hc.h)
+set(SOURCES_LZ4 ${LZ4_DIR}lz4.c ${LZ4_DIR}lz4hc.c ${LZ4_DIR}lz4.h ${LZ4_DIR}lz4hc.h ${LZ4_DIR}xxhash.c ${LZ4_DIR}xxhash.h)
 
 file(GLOB SOURCES_SBFRAMEWORK sources/SBFramework/*.cpp sources/SBFramework/*.h)
 file(GLOB SOURCES_SBFRAMEWORK_SBSCENE sources/SBFramework/SBScene/*.cpp sources/SBFramework/SBScene/*.h)

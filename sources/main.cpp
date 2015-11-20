@@ -1,13 +1,7 @@
 #ifdef __EMSCRIPTEN__
-#include <GL/glfw.h>
-#include "SBOpenGLHeaders.h"
-#define glfwWindowHint glfwOpenWindowHint
-#define GLFW_KEY_ESCAPE GLFW_KEY_ESC
-#define glfwSwapBuffers
-typedef void GLFWwindow;
+#include "main_emscripten.inl"
 #else
 #include <GLFW/glfw3.h>
-#endif
 
 #include <iostream>
 #include <cstdlib>
@@ -15,10 +9,6 @@ typedef void GLFWwindow;
 #include "Appication.h"
 #include "SBEventManager.h"
 #include "Events.h"
-
-#ifdef __EMSCRIPTEN__
-#include <emscripten/emscripten.h>
-#endif
 
 Appication app;
 
@@ -118,11 +108,8 @@ void CharCallback(GLFWwindow*, unsigned int c)
 }
 
 int main()
-{
-	
-#ifndef __EMSCRIPTEN__
+{	
 	glfwSetErrorCallback(error_callback);
-#endif
 
 	std::cout << "Compiled against GLFW " << GLFW_VERSION_MAJOR << "." << GLFW_VERSION_MINOR << "." << GLFW_VERSION_REVISION << std::endl;
 
@@ -186,3 +173,5 @@ int main()
 
 	return 0;
 }
+
+#endif

@@ -1,3 +1,4 @@
+precision highp float;
 uniform vec3 u_sunDirection;
 uniform vec3 u_sunLuminance;
 uniform vec3 u_skyLuminance;

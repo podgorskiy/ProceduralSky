@@ -15,8 +15,8 @@ ProceduralSky::~ProceduralSky()
 
 void ProceduralSky::Init(int horizontalCount, int verticalCount)
 {
-	SB::CFile fileShaderV("shaders/sky.vs", SB::IFile::FILE_READ);
-	SB::CFile fileShaderF("shaders/sky.fs", SB::IFile::FILE_READ);
+	SB::CFile fileShaderV("data/shaders/sky.vs", SB::IFile::FILE_READ);
+	SB::CFile fileShaderF("data/shaders/sky.fs", SB::IFile::FILE_READ);
 	m_shader->CreateProgramFrom("sky", &fileShaderV, &fileShaderF);
 
 	std::vector<Vertex> screenSpaceMeshVB;
@@ -38,12 +38,12 @@ void ProceduralSky::Init(int horizontalCount, int verticalCount)
 		for (int j = 0; j < horizontalCount - 1; j++)
 		{
 			screenSpaceMeshIB.push_back(j + 0 + horizontalCount * (i + 0));
-			screenSpaceMeshIB.push_back(j + 0 + horizontalCount * (i + 1));
 			screenSpaceMeshIB.push_back(j + 1 + horizontalCount * (i + 0));
+			screenSpaceMeshIB.push_back(j + 0 + horizontalCount * (i + 1));
 
 			screenSpaceMeshIB.push_back(j + 1 + horizontalCount * (i + 0));
-			screenSpaceMeshIB.push_back(j + 0 + horizontalCount * (i + 1));
 			screenSpaceMeshIB.push_back(j + 1 + horizontalCount * (i + 1));
+			screenSpaceMeshIB.push_back(j + 0 + horizontalCount * (i + 1));
 		}
 	}
 

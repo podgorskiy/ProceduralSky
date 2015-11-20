@@ -1,18 +1,21 @@
 #pragma once
 #include <map>
+#include <vector>
 
 namespace SB
 {
 	class IFile;
-	class Scene;
 	class Node;
 	class Mesh;
 
-	class SceneSerializer
+	class Serializer
 	{
 	public:
-		bool Serialize(const Node* scene, IFile* file);
-		Scene* DeSerialize(IFile* file);
+		bool SerializeScene(const Node* scene, IFile* file);
+		Node* DeSerializeScene(IFile* file);
+
+		bool SerializeBatchList(const std::vector<SB::Mesh*>, IFile* file);
+		void DeSerializeBatchList(std::vector<SB::Mesh*>& batchList, IFile* file);
 	private:
 		typedef int MeshID;
 

@@ -31,12 +31,28 @@ void Mesh::CreateVBO()
 	m_VBO.CreateBuffers();
 	if (m_rawIntIndices != NULL)
 	{
+		for (int i = 0; i < m_indeciesCount; ++i)
+		{
+			if (m_rawIntIndices[i] < 0 || m_rawIntIndices[i] >= m_verticesCount)
+			{
+				LOGE("m_rawIntIndices[i] < 0 || m_rawIntIndices[i] >= m_verticesCount");
+				assert(false);
+			} 
+		}
 		m_VBO.FillBuffers(m_rawbuffer, m_verticesCount, m_stride, m_rawIntIndices, m_indeciesCount, sizeof(*m_rawIntIndices));
 		delete m_rawIntIndices;
 		m_rawIntIndices = NULL;
 	}
 	else if (m_rawShortIndices != NULL)
 	{
+		for (int i = 0; i < m_indeciesCount; ++i)
+		{
+			if (m_rawShortIndices[i] < 0 || m_rawShortIndices[i] >= m_verticesCount)
+			{
+				LOGE("m_rawIntIndices[i] < 0 || m_rawIntIndices[i] >= m_verticesCount");
+				assert(false);
+			}
+		}
 		m_VBO.FillBuffers(m_rawbuffer, m_verticesCount, m_stride, m_rawShortIndices, m_indeciesCount, sizeof(*m_rawShortIndices));
 		delete m_rawShortIndices;
 		m_rawShortIndices = NULL;
@@ -98,7 +114,7 @@ void Mesh::Draw(Shader& shader)
 	}
 	if (shader.colorAttribute.Valid() && m_coffset != -1)
 	{
-		glDisableVertexAttribArray((int)shader.normalAttribute);
+		glDisableVertexAttribArray((int)shader.colorAttribute);
 	}
 	if (shader.uvAttribute.Valid() && m_toffset1 != -1)
 	{

@@ -1,3 +1,4 @@
+precision highp float;
 varying vec3 v_skyColor;
 void main() 
 {

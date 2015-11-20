@@ -9,7 +9,6 @@
 namespace SB
 {
 	class Node;
-	class Scene;
 	class Mesh;
 
 	class SceneDAEConstructor
@@ -21,14 +20,14 @@ namespace SB
 
 		bool OpenDAE(const char* filename);
 		void PrintDebugOutput(Node& node, int level = 0, std::vector<bool> last = std::vector<bool>());
-		Scene* ConstructSBScene();
+		Node* ConstructSBScene();
 
 	private:
-		void ReadScene(const pugi::xml_node& hRoot, Scene& root);
+		void ReadScene(const pugi::xml_node& hRoot, Node& root);
 		void ReadGeometry(const pugi::xml_node& hRoot);
 		void ReadMesh(const pugi::xml_node& mesh, const std::string& id);
 		void ReadSpline(const pugi::xml_node& spline, const std::string& id);
-		void AddChild(const pugi::xml_node& nodeE, Node* parent, Scene* root);
+		void AddChild(const pugi::xml_node& nodeE, Node* parent, Node* root);
 		void CreateBB(std::vector<glm::vec3>& v);
 		
 		void ParseVertex(std::string& POSITION,
