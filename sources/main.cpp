@@ -10,7 +10,22 @@
 #include "SBEventManager.h"
 #include "Events.h"
 
+#ifdef WIN32
+#include <direct.h>
+#define GetCurrentDir _getcwd
+#else
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#endif
+
 Appication app;
+
+std::string ExePath() 
+{
+	char buffer[FILENAME_MAX];
+	GetCurrentDir(buffer, FILENAME_MAX);
+	return buffer;
+}
 
 void error_callback(int error, const char* description)
 {
@@ -107,8 +122,15 @@ void CharCallback(GLFWwindow*, unsigned int c)
 	//	io.AddInputCharacter((unsigned short)c);
 }
 
-int main()
+int main(int argc, char **argv)
 {	
+	for (int i = 0; i < argc; ++i)
+	{
+		std::cout << argv[i] << std::endl;
+	}
+	
+	std::cout << "Working directory: " << ExePath() << std::endl;
+
 	glfwSetErrorCallback(error_callback);
 
 	std::cout << "Compiled against GLFW " << GLFW_VERSION_MAJOR << "." << GLFW_VERSION_MINOR << "." << GLFW_VERSION_REVISION << std::endl;
