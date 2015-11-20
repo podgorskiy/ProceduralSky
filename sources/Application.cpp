@@ -1,4 +1,4 @@
-﻿#include "Appication.h"
+﻿#include "Application.h"
 
 #include "SBShader/SBShader.h"
 #include "SBScene/SBSceneDAEConstructor.h"
@@ -22,6 +22,100 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+
+SB::SceneRenderer::RenderList renderlist;
+
+void constructCity()
+{
+	SB::Node* city = new SB::Node;
+
+	const char* cityParts[] = {
+
+		"casino_backstreet.dae",
+		"strip01.dae",
+		"rich_residential.dae",
+		"airport.dae",
+		"construction.dae",
+		"desert00.dae",
+		"desert01.dae",
+		"desert02.dae",
+		"desert03.dae",
+		"downtown.dae",
+		"government.dae",
+		"industrial.dae",
+		"poor_residential.dae",
+		"stadium.dae",
+		"strip00.dae",
+		"strip02.dae",
+		"strip03.dae"
+	};
+
+
+	for (int i = 0; i < sizeof(cityParts) / sizeof(cityParts[0]); i++)
+	{
+		SB::SceneDAEConstructor sc;
+		sc.OpenDAE((std::string("city_source/") + cityParts[i]).c_str());
+		SB::Node* scene = sc.ConstructSBScene();
+		SB::Utils::RemoveNodes(scene, "additif_*");
+		SB::Utils::RemoveNodes(scene, "bush_*");
+		SB::Utils::RemoveNodes(scene, "tree_*");
+		SB::Utils::RemoveNodes(scene, "cactus_*");
+		SB::Utils::RemoveNodes(scene, "*__b0_1*");
+		SB::Utils::RemoveNodes(scene, "*__p0_1*");
+		SB::Utils::RemoveNodes(scene, "*__t0_1*");
+		SB::Utils::RemoveNodes(scene, "road_lines_*");
+		SB::Utils::Merge(city, scene);
+	}
+
+	{
+		SB::CFile file;
+		SB::Serializer serializer;
+		file.Open("data/city.bdae", SB::IFile::FILE_WRITE);
+		serializer.SerializeScene(city, &file);
+	}
+
+	SB::Utils::PushMeshDataToVideoMemory(city, true);
+	SB::SceneRenderer sceneRenderer;
+	renderlist = sceneRenderer.RegisterNodes(city);
+}
+
+
+void constructCity2()
+{
+	if (false)
+	{
+		SB::CFile file;
+		SB::Serializer serializer;
+		file.Open("city_source/city.bdae", SB::IFile::FILE_READ);
+		SB::Node* city = serializer.DeSerializeScene(&file);
+
+		std::vector<SB::Mesh*> meshList;
+		SB::Utils::MakeFlat(meshList, city);
+
+		std::vector<SB::Mesh*> batchedMeshList;
+		SB::Utils::BatchMeshes(meshList, batchedMeshList);
+
+		SB::CFile fileBatch;
+		fileBatch.Open("data/city_batch.bdae", SB::IFile::FILE_WRITE);
+		SB::Serializer se;
+		se.SerializeBatchList(batchedMeshList, &fileBatch);
+	}
+
+	SB::CFile fileBatch;
+	fileBatch.Open("data/city_batch.bdae", SB::IFile::FILE_READ);
+	SB::Serializer se;
+	std::vector<SB::Mesh*> batchedMeshList;
+	se.DeSerializeBatchList(batchedMeshList, &fileBatch);
+	
+	SB::Utils::PushMeshDataToVideoMemory(batchedMeshList);
+
+	for (int i = 0; i < batchedMeshList.size(); ++i)
+	{
+		glm::mat4 transform(1.0f);
+		renderlist.push_back(SB::SceneRenderer::Entity(transform, batchedMeshList[i]));
+	}
+}
+
 
 int Appication::Init()
 {
@@ -56,6 +150,8 @@ int Appication::Init()
 	sc.OpenDAE("data/test_scene.dae");
 	m_rootScene = sc.ConstructSBScene();
 	
+	constructCity2();
+
 	SB::Utils::PushMeshDataToVideoMemory(m_rootScene, true);
 
 	m_sun = m_rootScene->GetNodeByName("Sun");
@@ -74,7 +170,7 @@ int Appication::Init()
 
 	m_camera = new SB::Camera;
 	m_camera->SetFOV(60.0f / 180.0f*3.14f);
-	m_camera->SetNearFarPlanes(1.0f, 10000.0f);
+	m_camera->SetNearFarPlanes(100.0f, 3000.0f * 100.0f);
 	
 	m_camera->SetPosition(position);
 	m_camera->SetUpVector(upVector);
@@ -92,7 +188,7 @@ int Appication::Init()
 
 	m_cameraController = new SB::CameraFreeFlightController;
 	m_cameraController->AttachCamera(m_camera);
-	m_cameraController->SetSpeed(0.5f);
+	m_cameraController->SetSpeed(1000.0f);
 
 	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseButtonEvent>(m_cameraController);
 	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseMoveEvent>(m_cameraController);
@@ -155,6 +251,7 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 
 	m_sceneRenderer->RegisterNodes(m_rootScene);
 	m_sceneRenderer->Render(m_camera, m_terrainShader);
+	m_sceneRenderer->Render(renderlist, m_camera, m_terrainShader);
 
 	m_proceduralSky.Draw(m_camera);
 	
