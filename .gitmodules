@@ -16,3 +16,6 @@
 [submodule "libs/glfw"]
 	path = libs/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "libs/SimpleText"]
+	path = libs/SimpleText
+	url = https://github.com/podgorskiy/SimpleText.git

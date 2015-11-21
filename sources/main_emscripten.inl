@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "Appication.h"
+#include "Application.h"
 #include "SBImGuiBinding.h"
 #include "SBEventManager.h"
 #include "SBBasicEvents.h"

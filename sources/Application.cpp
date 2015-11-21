@@ -24,6 +24,7 @@
 #include <vector>
 
 SB::SceneRenderer::RenderList renderlist;
+SB::SceneRenderer::RenderList renderlistOcean;
 
 void constructCity()
 {
@@ -157,6 +158,32 @@ int Appication::Init()
 	m_sun = m_rootScene->GetNodeByName("Sun");
 	m_sun->DetachNode();
 
+
+	{
+		SB::SceneDAEConstructor sc;
+		sc.OpenDAE("city_source/ocean.dae");
+		SB::Node* scene = sc.ConstructSBScene();
+
+		std::vector<SB::Mesh*> meshList;
+		SB::Utils::MakeFlat(meshList, scene);
+
+		std::vector<SB::Mesh*> batchedMeshList;
+		SB::Utils::BatchMeshes(meshList, batchedMeshList);
+
+		SB::CFile fileBatch;
+		fileBatch.Open("data/city_batch.bdae", SB::IFile::FILE_WRITE);
+		SB::Serializer se;
+		se.SerializeBatchList(batchedMeshList, &fileBatch);
+
+		SB::Utils::PushMeshDataToVideoMemory(batchedMeshList);
+
+		for (int i = 0; i < batchedMeshList.size(); ++i)
+		{
+			glm::mat4 transform(1.0f);
+			renderlistOcean.push_back(SB::SceneRenderer::Entity(transform, batchedMeshList[i]));
+		}
+	}
+
 	SB::CFile dynamicLighteningXML("data/ProceduralSky.xml", SB::IFile::FILE_READ);
 	m_dynamicLightening.Load(&dynamicLighteningXML);
 
@@ -252,6 +279,7 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 	m_sceneRenderer->RegisterNodes(m_rootScene);
 	m_sceneRenderer->Render(m_camera, m_terrainShader);
 	m_sceneRenderer->Render(renderlist, m_camera, m_terrainShader);
+	m_sceneRenderer->Render(renderlistOcean, m_camera, m_terrainShader);
 
 	m_proceduralSky.Draw(m_camera);
 	
