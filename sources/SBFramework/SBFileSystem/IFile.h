@@ -8,7 +8,9 @@ namespace SB
 	{
 	public:
 
-		virtual ~IFile(){};
+		virtual ~IFile()
+		{
+		};
 
 		enum MODE
 		{
@@ -21,32 +23,30 @@ namespace SB
 		};
 
 		virtual bool Open(const std::string& filename, MODE mode) = 0;
+		
+		virtual bool Valid() const = 0;
 
-		virtual void Close() = 0;
+		virtual void Seek(int position) const = 0;
 
-		virtual bool Valid() = 0;
+		virtual int Tell() const = 0;
 
-		virtual void Seek(int position) = 0;
+		virtual int GetSize() const = 0;
 
-		virtual int Tell() = 0;
-
-		virtual int GetSize() = 0;
-
-		virtual bool Read(char* destanation, int size) = 0;
+		virtual bool Read(char* destanation, int size) const = 0;
 
 		virtual bool Write(const char* source, int size) = 0;
 
-		bool ReadCompressed(char* destanation, int size);
+		bool ReadCompressed(char* destanation, int size) const;
 
 		bool WriteCompressed(const char* source, int size);
 		
-		bool ReadByte(char& byte);
+		bool ReadByte(char& byte) const;
 
-		bool ReadInt(int& integer);
+		bool ReadInt(int& integer) const;
 
-		bool ReadFloat(float& floatValue);
+		bool ReadFloat(float& floatValue) const;
 
-		bool ReadString(std::string& str);
+		bool ReadString(std::string& str) const;
 
 		bool WriteByte(char byte);
 
@@ -58,7 +58,7 @@ namespace SB
 			
 	private:
 		template<typename T>
-		bool Read_(T& data)
+		bool Read_(T& data) const
 		{
 			return Read(reinterpret_cast<char*>(&data), sizeof(T));
 		}
@@ -71,22 +71,22 @@ namespace SB
 
 	};
 
-	inline bool IFile::ReadByte(char& byte)
+	inline bool IFile::ReadByte(char& byte) const
 	{
 		return Read_(byte);
 	}
 
-	inline bool IFile::ReadInt(int& integer)
+	inline bool IFile::ReadInt(int& integer) const
 	{
 		return Read_(integer);
 	}
 
-	inline bool IFile::ReadFloat(float& floatValue)
+	inline bool IFile::ReadFloat(float& floatValue) const
 	{
 		return Read_(floatValue);
 	}
 	
-	inline bool IFile::WriteByte(char byte)
+	inline bool IFile::WriteByte(char byte) 
 	{
 		return Write_(byte);
 	}
