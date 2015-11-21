@@ -2,7 +2,7 @@
 #include "SBCommon.h"
 #include "SBNode.h"
 #include "SBMesh.h"
-#include "IFile.h"
+#include "SBFileSystem/IFile.h"
 
 #include <glm/matrix.hpp>
 
@@ -259,8 +259,8 @@ Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, IFile* file)
 
 	assert(!endOfFile);
 	
-	typedef  bool (IFile::*ReadFn)(char* source, int size);
-	ReadFn readFn = NULL;
+	typedef  bool (IFile::*ReadFn)(char* source, int size) const;
+	ReadFn readFn = nullptr;
 
 	int compression = -1;
 	file->ReadInt(compression);

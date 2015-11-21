@@ -2,9 +2,13 @@
 #include "IFile.h"
 
 #include <cstdio>
+#include <memory>
 
 namespace SB
 {
+	struct FileHandle;
+	typedef std::shared_ptr<FileHandle> FileHandlePtr;
+
 	class CFile : public IFile
 	{
 	public:
@@ -15,23 +19,21 @@ namespace SB
 		virtual ~CFile();
 		
 		virtual bool Open(const std::string& filename, MODE mode);
+		
+		virtual bool Valid() const;
 
-		virtual void Close();
+		virtual void Seek(int position) const;
 
-		virtual bool Valid();
+		virtual int Tell() const;
 
-		virtual void Seek(int position);
+		virtual int GetSize() const;
 
-		virtual int Tell();
-
-		virtual int GetSize();
-
-		virtual bool Read(char* destanation, int size);
+		virtual bool Read(char* destanation, int size) const;
 
 		virtual bool Write(const char* destanation, int size);
 
 	private:
 		const char* GetMode(MODE mode);
-		FILE* file;
+		FileHandlePtr m_file;
 	};
 }

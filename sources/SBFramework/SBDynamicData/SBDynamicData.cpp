@@ -1,6 +1,6 @@
 #include "SBDynamicData.h"
 #include "SBDynamicDataValues.h"
-#include "SBCFile.h"
+#include "SBFileSystem/SBCFile.h"
 
 #include <pugixml.hpp>
 

@@ -41,6 +41,7 @@ def main():
 		"libs/glm",
 		"libs/imgui",
 		"libs/pugixml/src",
+		"libs/SimpleText/include",
 		"libs/lz4/lib"
 	]
 	

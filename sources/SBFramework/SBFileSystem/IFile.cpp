@@ -5,7 +5,7 @@
 
 using namespace SB;
 
-bool IFile::ReadString(std::string& str)
+bool IFile::ReadString(std::string& str) const
 {
 	int size = 0;
 	if (!ReadInt(size))
@@ -33,7 +33,7 @@ bool IFile::WriteString(const std::string& str)
 	return false;
 }
 
-bool IFile::ReadCompressed(char* destanation, int size)
+bool IFile::ReadCompressed(char* destanation, int size) const
 {
 	int compressedSize;
 	ReadInt(compressedSize);

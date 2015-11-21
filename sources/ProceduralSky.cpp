@@ -1,6 +1,6 @@
 #include "ProceduralSky.h"
 #include "SBShader/SBShader.h"
-#include "SBCFile.h"
+#include "SBFileSystem/SBCFile.h"
 #include "SBCamera.h"
 #include <glm/matrix.hpp>
 
