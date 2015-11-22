@@ -1,8 +1,8 @@
-#pragma once
 #include "SBRequestPull.h"
 #include "SBRequest.h"
 #include "SBRequestData.h"
 #include "SBRequestTexture.h"
+#include <cassert>
 
 using namespace SB;
 
@@ -16,45 +16,39 @@ const std::string& RequestPull::GetUrlPrefix()
 	return m_urlPrefix;
 }
 
-RequestDataPtr RequestPull::CreateDataRequest(const std::string& URL)
+void RequestPull::AddToPending(const RequestPtr& request)
 {
-	RequestData* r = new RequestData(URL, this);
-	RequestDataPtr ptr(r);
-	AddToPending(ptr);
-	return ptr;
+	m_pending.push_back(std::static_pointer_cast<Request>(request));
 }
 
-RequestTexturePtr RequestPull::CreateTextureRequest(const std::string& URL)
+void RequestPull::RemoveFromRunning(Request* request)
 {
-	RequestTexture* r = new RequestTexture(URL, this);
-	RequestTexturePtr ptr(r);
-	AddToPending(ptr);
-	return ptr;
+	std::map<Request*, RequestPtr>::iterator it = m_running.find(request);
+	assert(it != m_running.end());
+	m_running.erase(it);
 }
 
-void RequestPull::AddToPending(RequestDataPtr request)
+void RequestPull::SetCountOfSimultaneousRequests(int count)
 {
-	m_pendingData[request.get()] = request;
+	m_maxCount = count;
 }
 
-void RequestPull::AddToPending(RequestTexturePtr request)
+void RequestPull::Update()
 {
-	m_pendingTextures[request.get()] = request;
-}
-
-void RequestPull::RemoveFromPending(Request* request)
-{
-	std::map<Request*, RequestTexturePtr>::iterator itT = m_pendingTextures.find(request);
-
-	if (itT != m_pendingTextures.end())
+	int pendingSize = m_pending.size();
+	if (m_runningCount < m_maxCount && pendingSize > 0)
 	{
-		m_pendingTextures.erase(itT);
-		return;
-	}
-
-	std::map<Request*, RequestDataPtr>::iterator itD = m_pendingData.find(request);
-	if (itD != m_pendingData.end())
-	{
-		m_pendingData.erase(itD);
+		int count = m_maxCount - m_runningCount;
+		if (count > pendingSize)
+		{
+			count = pendingSize;
+		}
+		for (int i = 0; i < count; ++i)
+		{
+			RequestPtr r = m_pending.front();
+			m_pending.pop_front();
+			m_running[r.get()] = r;
+			r->Start();
+		}
 	}
 }

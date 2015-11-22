@@ -11,8 +11,17 @@ RequestData::RequestData(const std::string& URL, RequestPull* requestPull) : Req
 
 void RequestData::OnLoad(const void* buffer, int size)
 {
-	Request::OnLoad(buffer, size);
 	m_memoryFile = MemoryFile(static_cast<const char*>(buffer), size);
+	if (m_callback != nullptr)
+	{
+		m_callback(m_memoryFile);
+	}
+	Request::OnLoad(buffer, size);
+}
+
+void RequestData::SetCallback(const std::function<void(const MemoryFile& memfile)>& callback)
+{
+	m_callback = callback;
 }
 
 MemoryFile RequestData::GetFile()

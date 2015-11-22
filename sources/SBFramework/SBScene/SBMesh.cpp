@@ -33,7 +33,7 @@ void Mesh::CreateVBO()
 	{
 		for (int i = 0; i < m_indeciesCount; ++i)
 		{
-			if (m_rawIntIndices[i] < 0 || m_rawIntIndices[i] >= m_verticesCount)
+			if (m_rawIntIndices[i] >= m_verticesCount)
 			{
 				LOGE("m_rawIntIndices[i] < 0 || m_rawIntIndices[i] >= m_verticesCount");
 				assert(false);

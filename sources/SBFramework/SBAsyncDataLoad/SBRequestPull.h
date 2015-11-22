@@ -2,15 +2,13 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <list>
 
 namespace SB
 {
 	class Request;
-	class RequestData;
-	class RequestTexture;
 
-	typedef std::shared_ptr<RequestData> RequestDataPtr;
-	typedef std::shared_ptr<RequestTexture> RequestTexturePtr;
+	typedef std::shared_ptr<Request> RequestPtr;
 
 	class RequestPull
 	{
@@ -19,16 +17,34 @@ namespace SB
 		void SetUrlPrefix(const std::string& URL);
 		const std::string& GetUrlPrefix();
 
-		RequestDataPtr CreateDataRequest(const std::string& URL);
-		RequestTexturePtr CreateTextureRequest(const std::string& URL);
+		template<typename T>
+		std::shared_ptr<T> CreateRequest(const std::string& URL);
+
+		void SetCountOfSimultaneousRequests(int count);
+
+		void Update();
 
 	private:
-		void AddToPending(RequestDataPtr request);
-		void AddToPending(RequestTexturePtr request);
-		void RemoveFromPending(Request* request);
+		void AddToPending(const RequestPtr& request);
 
-		std::map<Request*, RequestDataPtr> m_pendingData;
-		std::map<Request*, RequestTexturePtr> m_pendingTextures;
+		void RemoveFromRunning(Request* request);
+
+		std::list<RequestPtr> m_pending;
+		
+		std::map<Request*, RequestPtr> m_running;
+
 		std::string m_urlPrefix;
+
+		int m_runningCount;
+		int m_maxCount;
 	};
+
+	template<typename T>
+	inline std::shared_ptr<T> RequestPull::CreateRequest(const std::string& URL)
+	{
+		T* r = new T(URL, this);
+		std::shared_ptr<T> ptr(r);
+		AddToPending(std::static_pointer_cast<Request>(ptr));
+		return ptr;
+	}
 }
