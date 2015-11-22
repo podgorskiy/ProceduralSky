@@ -2,14 +2,10 @@
 #include <cstdio>
 #include <cassert>
 
-#define __STR2__(x) #x
-#define __STR1__(x) __STR2__(x)
-#define __LOC__ "File:" __FILE__ " ("__STR1__(__LINE__)") "
-
 #define LOG__(...) (void)printf(__VA_ARGS__);
 #define LOG_(...) (void)printf(__VA_ARGS__);printf("\n");
-#define LOGW(...) printf(__LOC__);printf(" W: ");(void)printf(__VA_ARGS__);printf("\n");
-#define LOGE(...) printf(__LOC__);printf(" E: ");(void)printf(__VA_ARGS__);printf("\n");printf("file:%s\nline:%d\n", __FILE__, __LINE__);assert(false)
+#define LOGW(...) printf("File:%s\nline:%d\n", __FILE__, __LINE__);printf(" W: ");(void)printf(__VA_ARGS__);printf("\n");
+#define LOGE(...) printf("File:%s\nline:%d\n", __FILE__, __LINE__);printf(" E: ");(void)printf(__VA_ARGS__);printf("\n");assert(false)
 #define LOGI(...) printf(" I: ");(void)printf(__VA_ARGS__);printf("\n");
 
 #define ASSERT(Condition, ...) if(!(Condition)){LOGE(__VA_ARGS__);}

@@ -5,6 +5,8 @@ namespace SB
 {
 	class RequestPull;
 
+	typedef std::shared_ptr<RequestTexture> RequestTexturePtr;
+
 	class RequestTexture : public Request
 	{
 		friend class SB::RequestPull;

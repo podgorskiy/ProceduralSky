@@ -30,7 +30,7 @@ namespace SB
 
 		virtual bool Read(char* destanation, int size) const;
 
-		virtual bool Write(const char* destanation, int size);
+		virtual bool Write(const char* source, int size);
 
 	private:
 		const char* GetMode(MODE mode);

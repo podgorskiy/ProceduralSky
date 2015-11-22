@@ -106,12 +106,12 @@ const std::vector<QuaternionValue*>& DynamicLighteningProperties::GetValuesVecto
 	return m_quat;
 }
 
-template float DynamicLighteningProperties::GetValueByID<float>(ValueID id, float time) const;
+template float SB::DynamicLighteningProperties::GetValueByID<float>(ValueID id, float time) const;
 
-template glm::vec2 DynamicLighteningProperties::GetValueByID<glm::vec2>(ValueID id, float time) const;
+template glm::vec2 SB::DynamicLighteningProperties::GetValueByID<glm::vec2>(ValueID id, float time) const;
 
-template glm::vec3 DynamicLighteningProperties::GetValueByID<glm::vec3>(ValueID id, float time) const;
+template glm::vec3 SB::DynamicLighteningProperties::GetValueByID<glm::vec3>(ValueID id, float time) const;
 
-template glm::vec4 DynamicLighteningProperties::GetValueByID<glm::vec4>(ValueID id, float time) const;
+template glm::vec4 SB::DynamicLighteningProperties::GetValueByID<glm::vec4>(ValueID id, float time) const;
 
-template glm::quat DynamicLighteningProperties::GetValueByID<glm::quat>(ValueID id, float time) const;
+template glm::quat SB::DynamicLighteningProperties::GetValueByID<glm::quat>(ValueID id, float time) const;

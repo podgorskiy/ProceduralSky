@@ -131,11 +131,11 @@ void Serializer::WriteMesh(const Mesh* mesh, MeshID id, IFile* file)
 }
 
 
-Node* Serializer::DeSerializeScene(IFile* file)
+Node* Serializer::DeSerializeScene(const IFile* file)
 {
 	if (!file->Valid())
 	{
-		return false;
+		return nullptr;
 	}
 
 	file->Seek(0);
@@ -177,7 +177,7 @@ Node* Serializer::DeSerializeScene(IFile* file)
 	return root;
 }
 
-void Serializer::ReadNode(Node* node, IFile* file)
+void Serializer::ReadNode(Node* node, const IFile* file)
 {
 	std::string name;
 	file->ReadString(name);
@@ -189,7 +189,7 @@ void Serializer::ReadNode(Node* node, IFile* file)
 
 	int renderable = 0;
 	file->ReadInt(renderable);
-	node->SetRenderable(static_cast<bool>(renderable));
+	node->SetRenderable(renderable == 1);
 
 	int meshCount = 0;
 	file->ReadInt(meshCount);
@@ -234,9 +234,9 @@ void Serializer::ReadNode(Node* node, IFile* file)
 	return;
 }
 
-Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, IFile* file)
+Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, const IFile* file)
 {
-	int id;
+	int id = -1;
 	file->ReadInt(id);
 	file->ReadInt(mesh->m_stride);
 	file->ReadInt(mesh->m_voffset);
@@ -257,7 +257,7 @@ Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, IFile* file)
 		}
 	}
 
-	assert(!endOfFile);
+	ASSERT(!endOfFile, "Unwexpected end of file");
 	
 	typedef  bool (IFile::*ReadFn)(char* source, int size) const;
 	ReadFn readFn = nullptr;
@@ -300,7 +300,7 @@ Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, IFile* file)
 		}
 	}
 
-	assert(!endOfFile);
+	ASSERT(!endOfFile, "Unwexpected end of file");
 
 	return id;
 }
@@ -320,7 +320,7 @@ bool Serializer::SerializeBatchList(const std::vector<SB::Mesh*> batchList, IFil
 	return true;
 }
 
-void Serializer::DeSerializeBatchList(std::vector<SB::Mesh*>& batchList, IFile* file)
+void Serializer::DeSerializeBatchList(std::vector<SB::Mesh*>& batchList, const IFile* file)
 {
 	if (!file->Valid())
 	{
@@ -342,4 +342,36 @@ void Serializer::DeSerializeBatchList(std::vector<SB::Mesh*>& batchList, IFile* 
 			batchList.push_back(mesh);
 		}
 	}
+}
+
+bool Serializer::SerializeMesh(const SB::Mesh* mesh, IFile* file)
+{
+	if (!file->Valid())
+	{
+		return false;
+	}
+	file->Seek(0);
+	WriteMesh(mesh, 0, file);
+	return true;
+}
+
+SB::Mesh* Serializer::DeSerializeMesh(const IFile* file)
+{
+	if (!file->Valid())
+	{
+		return nullptr;
+	}
+
+	file->Seek(0);
+
+	int dataType = -1;
+	file->ReadInt(dataType);
+	
+	if (dataType == DataChunks::MESH)
+	{
+		Mesh* mesh = new Mesh;
+		MeshID id = ReadMesh(mesh, file);
+		return mesh;
+	}
+	return nullptr;
 }

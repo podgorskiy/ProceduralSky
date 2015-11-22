@@ -251,6 +251,7 @@ int SB::Utils::GetIndex(SB::Mesh* mesh, int index)
 	{
 		return mesh->m_rawShortIndices[index];
 	}
+	return -1;
 }
 
 void SB::Utils::AppendMesh(SB::Mesh* base, SB::Mesh* other)

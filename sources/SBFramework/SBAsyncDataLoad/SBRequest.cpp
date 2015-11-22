@@ -25,39 +25,45 @@ using namespace SB;
 
 Request::Request(const std::string& URL, RequestPull* requestPull) : m_done(false), m_url(URL), m_requestPull(requestPull)
 {
+};
+
+void Request::Start()
+{
 #ifdef __EMSCRIPTEN__
-	std::string urlFull = requestPull->GetUrlPrefix() + URL;
+	std::string urlFull = m_requestPull->GetUrlPrefix() + m_url;
 	emscripten_async_wget_data(urlFull.c_str(), this, OnloadRequest, OnErrorRequest);
 #endif
-};
+#ifndef __EMSCRIPTEN__
+	{
+		SB::CFile file(m_requestPull->GetUrlPrefix() + m_url, SB::IFile::FILE_READ);
+		if (file.Valid())
+		{
+			int size = file.GetSize();
+			char* buffer = new char[size];
+			file.Read(buffer, size);
+			OnloadRequest(this, buffer, size);
+			delete[] buffer;
+		}
+	}
+#endif
+}
 
 void Request::OnError()
 {
 	m_done = true;
 	m_failed = true;
-	m_requestPull->RemoveFromPending(this);
+	m_requestPull->RemoveFromRunning(this);
 }
 
 void Request::OnLoad(const void* buffer, int size)
 {
 	m_done = true;
 	m_failed = false;
-	m_requestPull->RemoveFromPending(this);
+	m_requestPull->RemoveFromRunning(this);
 }
 
 bool Request::IsReady()
 {
-#ifndef __EMSCRIPTEN__
-	if ((rand() % 64) == 0)
-	{
-		SB::CFile file(m_url, SB::IFile::FILE_READ);
-		int size = file.GetSize();
-		char* buffer = new char[size];
-		file.Read(buffer, size);
-		OnloadRequest(this, buffer, size);
-		delete[] buffer;
-	}
-#endif
 	return m_done;
 }
 

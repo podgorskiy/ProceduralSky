@@ -11,6 +11,7 @@ namespace SB
 	class IValueController
 	{
 	public:
+		virtual ~IValueController(){};
 		virtual void AddValue(float time, const T& val) = 0;
 		virtual T GetValue(float time) const = 0;
 		virtual void Clear() = 0;
