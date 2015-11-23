@@ -6,6 +6,9 @@
 #ifdef IPHONE
 #include "SBTimer/SBTimer_iphone.h"
 #endif
+#ifdef __EMSCRIPTEN__
+#include "SBTimer/SBTimer_emscripten.h"
+#endif
 
 unsigned long long SB::GetMilliseconds()
 {
