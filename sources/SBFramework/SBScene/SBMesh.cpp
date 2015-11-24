@@ -101,6 +101,14 @@ void Mesh::Draw(Shader& shader)
 	{
 		shader.u_W.SetValue(m_worldMatrix);
 	}
+	if (shader.u_eyePosition.Valid())
+	{
+		shader.u_eyePosition.SetValue(m_eyePosition);
+	}
+	if (shader.u_time.Valid())
+	{
+		shader.u_time.SetValue(m_time);
+	}
 
 	m_VBO.DrawElements();
 
@@ -137,4 +145,36 @@ void Mesh::SetWorldViewProjectionMatrix(const glm::mat4& matrix)
 void Mesh::SetWorldMatrix(const glm::mat4& matrix)
 {
 	m_worldMatrix = matrix;
+}
+
+void Mesh::SetEyePosition(const glm::vec3& v)
+{
+	m_eyePosition = v;
+}
+
+void Mesh::SetTime(float t)
+{
+	m_time = t;
+}
+
+
+
+void Mesh::SetMaterialName(const std::string& materialName)
+{
+	m_materialName = materialName;
+}
+
+const std::string& Mesh::GetMaterialName() const
+{
+	return m_materialName;
+}
+
+void Mesh::SetTexture(const std::string& texture)
+{
+	m_textureFileName = texture;
+}
+
+const std::string& Mesh::GetTexture() const
+{
+	return m_textureFileName;
 }
