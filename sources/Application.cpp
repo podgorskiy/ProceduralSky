@@ -67,6 +67,10 @@ int Appication::Init()
 	m_sunShader = new SB::Shader;
 	m_sunShader->CreateProgramFrom("terrain", &fileSunShaderV, &fileSunShaderF);
 
+	m_cityManager.Init();
+	m_cityManager.SetShader(m_terrainShader);
+	m_cityManager.SetDynamicLightening(&m_dynamicLightening);
+
 	SB::SceneDAEConstructor sc;
 	sc.OpenDAE("data/test_scene.dae");
 	m_rootScene = sc.ConstructSBScene();
@@ -83,8 +87,8 @@ int Appication::Init()
 	m_skyLuminanceXYZID = m_dynamicLightening.GetValueID("Environment.SkyLuminanceXYZ");
 	m_sunLuminanceXYZID = m_dynamicLightening.GetValueID("Environment.SunLuminanceXYZ");
 
-	glm::vec3 lookAt(0.0f, 0.0f, 0.0f);
-	glm::vec3 position(5.0f, 5.0f, 2.0f);
+	glm::vec3 lookAt(-25739.3184, -60099.9180, 9936.82129);
+	glm::vec3 position(-25739.2285, -60100.9141, 9936.85254 );
 	glm::vec3 upVector(0, 0, 1);
 
 	m_camera = new SB::Camera;
@@ -107,7 +111,7 @@ int Appication::Init()
 
 	m_cameraController = new SB::CameraFreeFlightController;
 	m_cameraController->AttachCamera(m_camera);
-	m_cameraController->SetSpeed(1000.0f);
+	m_cameraController->SetSpeed(300.0f);
 
 	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseButtonEvent>(m_cameraController);
 	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseMoveEvent>(m_cameraController);
@@ -119,11 +123,9 @@ int Appication::Init()
 	m_sunController.SetMonth(SunController::June);
 	m_time = 9.0f;
 
-	dataPtr = rpull.CreateRequest<SB::RequestData>("README.md");
+	dataPtr = rpull.CreateRequest<SB::RequestData>("README.md", true);
 
-	m_cityManager.Init();
-	m_cityManager.SetShader(m_terrainShader);
-	
+
 	m_sceneRenderer = new SB::SceneRenderer;
 	stext = new SimpleText;
 	return EXIT_SUCCESS;
@@ -176,27 +178,18 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 	m_sceneRenderer->RegisterNodes(m_rootScene);
 	m_sceneRenderer->Render(m_camera, m_terrainShader);
 
-	m_cityManager.Draw(m_camera);
+	m_cityManager.SetSunDirection(sunDirection);
+	m_cityManager.SetSunLuminance(sunLuminanceRGB);
+	m_cityManager.SetSkyLuminance(skyLuminanceRGB);
+	m_cityManager.Draw(m_camera, m_time);
 
 	m_proceduralSky.Draw(m_camera);
 	
 	m_imGuiBinding->Render();
 
 	stext->EnableBlending(true);
-	std::vector<char> text;
-	std::vector<char> text2;
-	for (int i = 1; i < 127; i++)
-	{
-		text.push_back(i);
-	}
-	for (int i = 127; i < 255; i++)
-	{
-		text2.push_back(i);
-	}
-	text.push_back(0);
-	text2.push_back(0);
-	//stext->RenderLabel(text.data(), 0, 100);
-	//stext->RenderLabel(text2.data(), 0, 200);
+
+	rpull.Update();
 
 	if (dataPtr)
 	{

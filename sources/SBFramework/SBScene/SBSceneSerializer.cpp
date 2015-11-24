@@ -89,6 +89,8 @@ void Serializer::WriteMesh(const Mesh* mesh, MeshID id, IFile* file)
 {
 	file->WriteInt(DataChunks::MESH);
 	file->WriteInt(id);
+	file->WriteString(mesh->GetMaterialName().c_str());
+	file->WriteString(mesh->GetTexture().c_str());
 	file->WriteInt(mesh->m_stride);
 	file->WriteInt(mesh->m_voffset);
 	file->WriteInt(mesh->m_noffset);
@@ -238,6 +240,12 @@ Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, const IFile* file)
 {
 	int id = -1;
 	file->ReadInt(id);
+	std::string materialName;
+	file->ReadString(materialName);
+	mesh->SetMaterialName(materialName);
+	std::string textureName;
+	file->ReadString(textureName);
+	mesh->SetTexture(textureName);
 	file->ReadInt(mesh->m_stride);
 	file->ReadInt(mesh->m_voffset);
 	file->ReadInt(mesh->m_noffset);

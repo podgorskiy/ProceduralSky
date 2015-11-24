@@ -4,6 +4,7 @@
 
 #include <glm/matrix.hpp>
 #include <vector>
+#include <string>
 #include <map>
 
 namespace SB
@@ -34,15 +35,27 @@ namespace SB
 
 		void CreateVBO();
 		void Draw(Shader& shader);
+
+		/*Remove from here*/
 		void SetWorldViewProjectionMatrix(const glm::mat4& matrix);
 		void SetWorldMatrix(const glm::mat4& m);
+		void SetEyePosition(const glm::vec3& v);
+		void SetTime(float t);
+		void SetTexture(const std::string& texture);
+		const std::string& GetTexture() const;
 
+		void SetMaterialName(const std::string& materialName);
+		const std::string& GetMaterialName() const;
 	private:
 		
 		VerticesMaps* m_verticesMaps;
 
+		/*Remove from here*/
 		glm::mat4 m_worldMatrix;
 		glm::mat4 m_worldViewProjectionMatrix;
+		glm::vec3 m_eyePosition;
+		float m_time;
+		std::string m_textureFileName;
 
 		VBO m_VBO;
 		
@@ -60,5 +73,7 @@ namespace SB
 		int m_coffset;
 		int m_toffset1;
 		int m_toffset2;
+
+		std::string m_materialName;
 	};
 }

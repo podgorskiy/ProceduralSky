@@ -13,6 +13,10 @@
 #include "SBOpenGLHeaders.h"
 #include "SBAsyncDataLoad/SBRequestPull.h"
 #include "SBAsyncDataLoad/SBRequestData.h"
+#include "SBAsyncDataLoad/SBRequestTexture.h"
+#include "SBTexture/SBPVRReader.h"
+#include "SBTexture/SBTexture.h"
+#include "SBDynamicData/SBDynamicData.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -20,19 +24,44 @@
 #include <vector>
 #include <sstream>
 
+SB::PVRReader pvrREader;
+SB::TexturePtr texture1;
+SB::TexturePtr texture2;
+
+
 void CityManager::Init()
 {
 	m_rpull.SetUrlPrefix("async_data/");
 	m_rpull.SetCountOfSimultaneousRequests(5);
+	//ConstructCityFromDAE();
 	//MakeCityBatches();
-	MakeOcean();
-	LoadCityBatches();
-		
-	SB::RequestDataPtr r = m_rpull.CreateRequest<SB::RequestData>("ocean_batch.bdae");
-	r->SetCallback([this](const SB::MemoryFile& memfile)
+	//MakeOcean();
+	
 	{
-		LoadOcean(&memfile);
+		SB::RequestTexturePtr r = m_rpull.CreateRequest<SB::RequestTexture>("waternormal1.pvr", false);
+		texture1 = r->GetTexture();
+	}
+
+	{
+		SB::RequestTexturePtr r = m_rpull.CreateRequest<SB::RequestTexture>("waternormal2.pvr", false);
+		texture2 = r->GetTexture();
+	}
+
+	LoadCityBatches();
+
+	SB::RequestDataPtr r = m_rpull.CreateRequest<SB::RequestData>("ocean_batch.bdae", false);
+	r->SetCallback([this](const SB::IFile* file)
+	{
+		LoadOcean(file);
 	});
+
+
+	SB::CFile fileWaterShaderV("data/shaders/water.vs", SB::IFile::FILE_READ);
+	SB::CFile fileWaterShaderF("data/shaders/water.fs", SB::IFile::FILE_READ);
+	m_waterShader = new SB::Shader;
+	m_waterShader->CreateProgramFrom("water", &fileWaterShaderV, &fileWaterShaderF);
+
+	m_sceneRenderer.reset(new SB::SceneRenderer);
 }
 
 void CityManager::SetShader(SB::Shader* shader)
@@ -74,11 +103,15 @@ void CityManager::ConstructCityFromDAE()
 		SB::Utils::RemoveNodes(scene, "additif_*");
 		SB::Utils::RemoveNodes(scene, "bush_*");
 		SB::Utils::RemoveNodes(scene, "tree_*");
+		SB::Utils::RemoveNodes(scene, "plant_*");
+		SB::Utils::RemoveNodes(scene, "plant00*");
+		SB::Utils::RemoveNodes(scene, "flower");
 		SB::Utils::RemoveNodes(scene, "cactus_*");
 		SB::Utils::RemoveNodes(scene, "*__b0_1*");
 		SB::Utils::RemoveNodes(scene, "*__p0_1*");
 		SB::Utils::RemoveNodes(scene, "*__t0_1*");
-		SB::Utils::RemoveNodes(scene, "road_lines_*");
+		SB::Utils::RemoveNodes(scene, "road_lines*");
+		SB::Utils::RemoveNodes(scene, "ground_lines*");
 		SB::Utils::Merge(city, scene);
 	}
 
@@ -148,10 +181,10 @@ void CityManager::LoadCityBatches()
 	for (pugi::xml_node part = root.child("cityPart"); part; part = part.next_sibling("cityPart"))
 	{
 		std::string filename = part.attribute("file").as_string();
-		SB::RequestDataPtr r = m_rpull.CreateRequest<SB::RequestData>(filename);
-		r->SetCallback([this](const SB::MemoryFile& memfile)
+		SB::RequestDataPtr r = m_rpull.CreateRequest<SB::RequestData>(filename, false);
+		r->SetCallback([this](const SB::IFile* file)
 		{
-			PushCityBatch(&memfile);
+			PushCityBatch(file);
 		});
 	}
 }
@@ -193,6 +226,11 @@ void CityManager::PushCityBatch(const SB::IFile* file)
 {
 	SB::Serializer se;
 	SB::Mesh* mesh = se.DeSerializeMesh(file);
+	mesh->GetTexture();
+	{
+		SB::RequestTexturePtr r = m_rpull.CreateRequest<SB::RequestTexture>(mesh->GetTexture() + ".pvr", false);
+		m_textures[mesh->GetTexture()] = r->GetTexture();
+	}
 	
 	if (mesh != nullptr)
 	{
@@ -202,9 +240,46 @@ void CityManager::PushCityBatch(const SB::IFile* file)
 	}
 }
 
-void CityManager::Draw(SB::Camera* camera)
+void CityManager::Draw(SB::Camera* camera, float time)
 {
-	m_sceneRenderer->Render(m_renderlistCity, camera, m_terrainShader);
-	m_sceneRenderer->Render(m_renderlistOcean, camera, m_terrainShader);
+	m_terrainShader->UseIt();
+	m_terrainShader->GetUniform("u_texture").SetValue(0);
+	m_sceneRenderer->Render(m_renderlistCity, camera, m_terrainShader, &m_textures);
+
+	m_waterShader->UseIt();
+
+	int m_WaterColorID = m_dynamicLightening->GetValueID("AuxiliaryParameters.WaterColor");
+	glm::vec3 WaterColor = m_dynamicLightening->GetValueByID<glm::vec3>(m_WaterColorID, time);
+
+	m_waterShader->GetUniform("WaterNormal1").SetValue(0);
+	m_waterShader->GetUniform("WaterNormal2").SetValue(1);
+	m_waterShader->GetUniform("u_sunDirection").SetValue(sunDirection);
+	m_waterShader->GetUniform("u_sunLuminance").SetValue(sunLuminance);
+	m_waterShader->GetUniform("u_skyLuminance").SetValue(skyLuminance);
+	m_waterShader->GetUniform("u_waterColor").SetValue(WaterColor);
+	m_waterShader->GetUniform("u_waterSpecular").SetValue(2.0f);
+	texture1->Bind(0);
+	texture2->Bind(1);
+	m_sceneRenderer->Render(m_renderlistOcean, camera, m_waterShader);
+	texture1->UnBind();
 	m_rpull.Update();
+}
+
+
+void CityManager::SetSunDirection(const glm::vec3& v)
+{
+	sunDirection = v;
+}
+void CityManager::SetSunLuminance(const glm::vec3& v)
+{
+	sunLuminance = v;
+}
+void CityManager::SetSkyLuminance(const glm::vec3& v)
+{
+	skyLuminance = v;
+}
+
+void CityManager::SetDynamicLightening(SB::DynamicLighteningProperties* dl)
+{
+	m_dynamicLightening = dl;
 }

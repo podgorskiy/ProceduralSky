@@ -5,11 +5,15 @@
 #include "SBNode.h"
 #include "SBCamera.h"
 #include "SBShader/SBShader.h"
+#include "SBTimer/SBTimer.h"
+#include "SBTexture/SBTexture.h"
 
 using namespace SB;
 
 SceneRenderer::SceneRenderer()
 {
+	m_lasttime = static_cast<double>(SB::GetMilliseconds()) / 1000.0;
+	m_time = 0.0f;
 }
 
 const SceneRenderer::RenderList& SceneRenderer::RegisterNodes(Node* scene)
@@ -18,13 +22,28 @@ const SceneRenderer::RenderList& SceneRenderer::RegisterNodes(Node* scene)
 	return m_renderList;
 }
 
-void SceneRenderer::Render(const SceneRenderer::RenderList& renderlist, const Camera* camera, Shader* shader)
+void SceneRenderer::Render(const SceneRenderer::RenderList& renderlist, const Camera* camera, Shader* shader, const std::map<std::string, SB::TexturePtr>* textures)
 {
+	double dtime = static_cast<double>(SB::GetMilliseconds()) / 1000.0;
+	float delta = dtime - m_lasttime;
+	m_lasttime = dtime;
+	m_time += delta;
+
 	glm::mat4 viewProjection = camera->GetProjectionMatrix() * camera->GetViewMatrix();
 	for (SceneRenderer::RenderList::const_iterator it = renderlist.begin(); it != renderlist.end(); ++it)
 	{
+		if (textures != nullptr)
+		{
+			std::map<std::string, SB::TexturePtr>::const_iterator itt = textures->find(it->second->GetTexture());
+			if (itt != textures->end())
+			{
+				(*itt).second->Bind(0);
+			}
+		}
 		it->second->SetWorldMatrix(it->first);
 		it->second->SetWorldViewProjectionMatrix(viewProjection * it->first);
+		it->second->SetEyePosition(camera->GetPosition());
+		it->second->SetTime(m_time * 10.0f);
 		it->second->Draw(/*camera*/*shader);
 	}
 }

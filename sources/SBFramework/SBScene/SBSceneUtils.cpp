@@ -325,8 +325,11 @@ long long SB::Utils::GetHashFromMesh(SB::Mesh* mesh)
 		int m_coffset;
 		int m_toffset1;
 		int m_toffset2;
+		char materialinstance[64];
 	};
 	HashValues v;
+	memset(v.materialinstance, 0, 64);
+	strcpy(v.materialinstance, mesh->m_materialName.c_str());
 	v.m_stride = mesh->m_stride;
 	v.m_voffset = mesh->m_voffset;
 	v.m_noffset = mesh->m_noffset;
