@@ -326,10 +326,16 @@ long long SB::Utils::GetHashFromMesh(SB::Mesh* mesh)
 		int m_toffset1;
 		int m_toffset2;
 		char materialinstance[64];
+		char texture[64];
+		char lightmap[64];
 	};
 	HashValues v;
 	memset(v.materialinstance, 0, 64);
+	memset(v.texture, 0, 64);
+	memset(v.lightmap, 0, 64);
 	strcpy(v.materialinstance, mesh->m_materialName.c_str());
+	strcpy(v.texture, mesh->m_textureFileName.c_str());
+	strcpy(v.lightmap, mesh->m_textureFileName2.c_str());
 	v.m_stride = mesh->m_stride;
 	v.m_voffset = mesh->m_voffset;
 	v.m_noffset = mesh->m_noffset;

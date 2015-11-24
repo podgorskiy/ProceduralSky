@@ -178,3 +178,14 @@ const std::string& Mesh::GetTexture() const
 {
 	return m_textureFileName;
 }
+
+
+void Mesh::SetTexture2(const std::string& texture)
+{
+	m_textureFileName2 = texture;
+}
+
+const std::string& Mesh::GetTexture2() const
+{
+	return m_textureFileName2;
+}

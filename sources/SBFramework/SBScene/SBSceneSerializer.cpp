@@ -91,6 +91,7 @@ void Serializer::WriteMesh(const Mesh* mesh, MeshID id, IFile* file)
 	file->WriteInt(id);
 	file->WriteString(mesh->GetMaterialName().c_str());
 	file->WriteString(mesh->GetTexture().c_str());
+	file->WriteString(mesh->GetTexture2().c_str());
 	file->WriteInt(mesh->m_stride);
 	file->WriteInt(mesh->m_voffset);
 	file->WriteInt(mesh->m_noffset);
@@ -246,6 +247,9 @@ Serializer::MeshID Serializer::ReadMesh(Mesh* mesh, const IFile* file)
 	std::string textureName;
 	file->ReadString(textureName);
 	mesh->SetTexture(textureName);
+	std::string textureName2;
+	file->ReadString(textureName2);
+	mesh->SetTexture2(textureName2);
 	file->ReadInt(mesh->m_stride);
 	file->ReadInt(mesh->m_voffset);
 	file->ReadInt(mesh->m_noffset);

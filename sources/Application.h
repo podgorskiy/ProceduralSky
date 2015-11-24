@@ -43,6 +43,7 @@ private:
 
 	SB::EventManager* m_eventManager;
 	SB::ImGuiBinding* m_imGuiBinding;
+	SB::Shader* m_postShader;
 	SB::Shader* m_terrainShader;
 	SB::Shader* m_sunShader;
 	ProceduralSky m_proceduralSky;
