@@ -23,7 +23,7 @@ namespace SB
 
 using namespace SB;
 
-Request::Request(const std::string& URL, RequestPull* requestPull) : m_done(false), m_url(URL), m_requestPull(requestPull)
+Request::Request(const std::string& URL, bool copyData, RequestPull* requestPull) : m_done(false), m_copyData(copyData), m_url(URL), m_requestPull(requestPull)
 {
 };
 

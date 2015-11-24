@@ -243,6 +243,12 @@ Node* SceneDAEConstructor::ConstructSBScene()
 		}
 	}
 
+	ReadImages(root);
+
+	ReadEffects(root);
+
+	ReadMaterials(root);
+
 	ReadGeometry(root);
 
 	Node& scene = *new Node("root");
@@ -389,7 +395,14 @@ void SceneDAEConstructor::ParseVertex(
 	if (GETURL(pChild, POSITION)) sbmesh->m_voffset = vertexOffset;
 	if (GETURL(pChild, NORMAL)) sbmesh->m_noffset = vertexOffset;
 	if (GETURL(pChild, COLOR)) sbmesh->m_coffset = vertexOffset;
-	if (GetURL(pChild, "TEXCOORD", TEXCOORD1)) sbmesh->m_toffset1 = vertexOffset;
+	if (TEXCOORD1.size() == 0)
+	{
+		if (GetURL(pChild, "TEXCOORD", TEXCOORD1)) sbmesh->m_toffset1 = vertexOffset;
+	}
+	else
+	{
+		if (GetURL(pChild, "TEXCOORD", TEXCOORD2)) sbmesh->m_toffset2 = vertexOffset;
+	}
 }
 
 void SceneDAEConstructor::ParseSources(	
@@ -467,6 +480,12 @@ void SceneDAEConstructor::ReadMesh(const pugi::xml_node& mesh, const std::string
 		unit.sbmesh = new Mesh;
 		unit.sbmesh->m_verticesMaps = new Mesh::VerticesMaps;
 		Mesh::VerticesMaps* vmaps = unit.sbmesh->m_verticesMaps;
+
+		pugi::xml_attribute material = it->attribute("material");
+		if (material)
+		{
+			unit.sbmesh->SetMaterialName(material.as_string());
+		}
 
 		std::string VERTEX;
 		int vertexOffset;
@@ -665,18 +684,45 @@ void SceneDAEConstructor::AddChild(const pugi::xml_node& nodeE, Node* parent, No
 
 	Node* node = new Node(name.c_str(), *root);
 	parent->AddChild(*node);
-
-	if (nodeE.child("instance_geometry"))
+	
+	pugi::xml_node instance_geometry = nodeE.child("instance_geometry");
+	if (instance_geometry)
 	{
-		std::string url = nodeE.child("instance_geometry").attribute("url").as_string();
+		std::map<std::string, std::string> materialBindings;
+
+		std::string url = instance_geometry.attribute("url").as_string();
 		URLFILTER(url);
-		if(m_meshes.find(url) != m_meshes.end())
+		std::map<std::string, std::vector<Mesh*> > ::iterator meshSetIt = m_meshes.find(url);
+		if (meshSetIt != m_meshes.end())
 		{
-			node->SetMeshs(m_meshes[url]);
-		}
-		else
-		{
-			printf("");
+			node->SetMeshs(meshSetIt->second);
+
+			pugi::xml_node bind_material = instance_geometry.child("bind_material");
+			if (bind_material)
+			{
+				pugi::xml_node technique_common = bind_material.child("technique_common");
+				for (pugi::xml_node instance = technique_common.child("instance_material"); instance; instance = instance.next_sibling("instance_material"))
+				{
+					std::string materialTarget = instance.attribute("target").as_string();
+					URLFILTER(materialTarget);
+					materialBindings[instance.attribute("symbol").as_string()] = materialTarget;
+				}
+			}
+
+			for (std::vector<Mesh*>::iterator it = meshSetIt->second.begin(); it != meshSetIt->second.end(); ++it)
+			{
+				std::map<std::string, std::string>::iterator binding = materialBindings.find((*it)->GetMaterialName());
+				if (binding != materialBindings.end())
+				{
+					(*it)->SetMaterialName(binding->second);
+					std::string instance =  m_materialInstances[binding->second];
+					SB::EffectDescription effect =  m_effects[instance];
+					if (effect.diffuse.m_type == SB::EffectDescription::FixedParameter::Type::Texture)
+					{
+						(*it)->SetTexture(effect.diffuse.m_sampler);
+					}
+				}
+			}
 		}
 	}
 
@@ -752,5 +798,176 @@ void SceneDAEConstructor::AddChild(const pugi::xml_node& nodeE, Node* parent, No
 	for (pugi::xml_node child = nodeE.child("node"); child; child = child.next_sibling("node"))
 	{
 		AddChild(child, node, root);
+	}
+}
+
+
+void SceneDAEConstructor::ReadEffects(const pugi::xml_node& root)
+{
+	LOGI("loading: library_effects");
+	{
+		pugi::xml_node library_effects = root.child("library_effects");
+		for (pugi::xml_node effect = library_effects.child("effect"); effect; effect = effect.next_sibling("effect"))
+		{
+			std::string id = effect.attribute("id").as_string();
+			LOGI("effect: %s", id.c_str());
+
+			pugi::xml_node profile_COMMON = effect.child("profile_COMMON");
+			if (profile_COMMON)
+			{
+				EffectDescription description;
+
+				std::map<std::string, std::string> surfaces;
+				std::map<std::string, std::string> samplers;
+
+				for (pugi::xml_node newparam = profile_COMMON.child("newparam"); newparam; newparam = newparam.next_sibling("newparam"))
+				{
+					std::string sid = newparam.attribute("sid").as_string();
+					pugi::xml_node node = newparam.first_child();
+					std::string name = node.name();
+					if (name == "surface")
+					{
+						pugi::xml_node init_from = node.child("init_from");
+						surfaces[sid] = init_from.child_value();
+					}
+					else if (name == "sampler2D")
+					{
+						pugi::xml_node source = node.child("source");
+						samplers[sid] = source.child_value();
+					}
+				}
+
+				for (std::map<std::string, std::string>::iterator it = samplers.begin(); it != samplers.end(); ++it)
+				{
+					it->second = surfaces[it->second];
+				}
+
+				for (pugi::xml_node technique = profile_COMMON.child("technique"); technique; technique = technique.next_sibling("technique"))
+				{
+					std::string sid = technique.attribute("sid").as_string();
+
+					if (sid != "common")
+					{
+						continue;
+					}
+
+					for (pugi::xml_node node = technique.first_child(); node; node = node.next_sibling())
+					{
+						ParseFixedPipeLineParams(node, description, samplers);
+					}
+				}
+
+				m_effects[id] = description;
+			}
+		}
+	}
+}
+
+void SceneDAEConstructor::ParseParam(pugi::xml_node node, const char* name, EffectDescription::FixedParameter& desc, const std::map<std::string, std::string>& samplers)
+{
+	pugi::xml_node paramNode = node.child(name);
+	if (paramNode)
+	{
+		pugi::xml_node child = paramNode.first_child();
+		std::string type = child.name(); 
+		if (type == "texture")
+		{
+			desc.m_type = EffectDescription::FixedParameter::Texture; 
+			desc.m_sampler = child.attribute("texture").as_string();
+			std::map<std::string, std::string>::const_iterator it = samplers.find(desc.m_sampler);
+			if (it != samplers.end())
+			{
+				desc.m_sampler = it->second;
+				if (m_images.find(it->second) != m_images.end())
+				{
+					desc.m_sampler = m_images[it->second];
+				}
+			}
+		}
+		else if (type == "color")
+		{
+			desc.m_type = EffectDescription::FixedParameter::Color;
+			std::string colorStr = child.child_value();
+			float v[4];
+			Tokenizer tokens(colorStr.c_str());
+			ReadVector(tokens, v);
+			desc.m_color = glm::vec4(v[0], v[1], v[2], v[3]);
+		}
+		else if (type == "float")
+		{
+			desc.m_type = EffectDescription::FixedParameter::Float;
+			desc.m_floatValue = static_cast<float>(atof(child.child_value()));
+		}
+	}
+}
+
+void SceneDAEConstructor::ParseFixedPipeLineParams(pugi::xml_node node, EffectDescription& desc, const std::map<std::string, std::string>& samplers)
+{
+	std::string method = node.name();
+	if (method == "blin")
+	{
+		desc.type = SB::EffectDescription::blin;
+	}
+	else if (method == "phong")
+	{
+		desc.type = SB::EffectDescription::phong;
+	}
+	else if (method == "lambert")
+	{
+		desc.type = SB::EffectDescription::lambert;
+	}
+	ParseParam(node, "emission", desc.emission, samplers);
+	ParseParam(node, "ambient", desc.ambient, samplers);
+	ParseParam(node, "diffuse", desc.diffuse, samplers);
+	ParseParam(node, "specular", desc.specular, samplers);
+	ParseParam(node, "shininess", desc.shininess, samplers);
+	ParseParam(node, "reflective", desc.reflective, samplers);
+	ParseParam(node, "reflectivity", desc.reflectivity, samplers);
+	ParseParam(node, "transparent", desc.transparent, samplers);
+	ParseParam(node, "transparency", desc.transparency, samplers);
+	ParseParam(node, "index_of_refraction", desc.index_of_refraction, samplers);
+}
+
+void SceneDAEConstructor::ReadImages(const pugi::xml_node& root)
+{
+	LOGI("loading: library_images");
+	{
+		pugi::xml_node library_images = root.child("library_images");
+		for (pugi::xml_node image = library_images.child("image"); image; image = image.next_sibling("image"))
+		{
+			std::string id = image.attribute("id").as_string();
+			LOGI("image: %s", id.c_str());
+			pugi::xml_node init_from = image.child("init_from");
+			if (init_from)
+			{
+				std::string filename = init_from.child_value();
+				size_t f = filename.find(".tga");
+				if (f != std::string::npos)
+				{
+					filename.erase(f);
+				}
+				m_images[id] = filename;
+			}
+		}
+	}
+}
+
+void SceneDAEConstructor::ReadMaterials(const pugi::xml_node& root)
+{
+	LOGI("loading: library_materials");
+	{
+		pugi::xml_node library_materials = root.child("library_materials");
+		for (pugi::xml_node material = library_materials.child("material"); material; material = material.next_sibling("material"))
+		{
+			std::string id = material.attribute("id").as_string();
+			LOGI("material: %s", id.c_str());
+			pugi::xml_node instance_effect = material.child("instance_effect");
+			if (instance_effect)
+			{
+				std::string effectName = instance_effect.attribute("url").as_string();
+				URLFILTER(effectName);
+				m_materialInstances[id] = effectName;
+			}
+		}
 	}
 }

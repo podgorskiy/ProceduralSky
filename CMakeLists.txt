@@ -44,6 +44,7 @@ file(GLOB SOURCES_SBFRAMEWORK_SBDYNAMICDATA sources/SBFramework/SBDynamicData/*.
 file(GLOB SOURCES_SBFRAMEWORK_SBTIMER sources/SBFramework/SBTimer/*.cpp sources/SBFramework/SBTimer/*.h)
 file(GLOB SOURCES_SBFRAMEWORK_SBASYNCDATA sources/SBFramework/SBAsyncDataLoad/*.cpp sources/SBFramework/SBAsyncDataLoad/*.h)
 file(GLOB SOURCES_SBFRAMEWORK_SBFILESYSTEM sources/SBFramework/SBFileSystem/*.cpp sources/SBFramework/SBFileSystem/*.h)
+file(GLOB SOURCES_SBFRAMEWORK_SBTEXTURE sources/SBFramework/SBTexture/*.cpp sources/SBFramework/SBTexture/*.h)
 
 source_group("" FILES ${SOURCES})
 source_group(SBFramework   FILES ${SOURCES_SBFRAMEWORK})
@@ -53,6 +54,7 @@ source_group(SBFramework\\SBDynamicData   FILES ${SOURCES_SBFRAMEWORK_SBDYNAMICD
 source_group(SBFramework\\SBTimer   FILES ${SOURCES_SBFRAMEWORK_SBTIMER})
 source_group(SBFramework\\SBAsyncDataLoad   FILES ${SOURCES_SBFRAMEWORK_SBASYNCDATA})
 source_group(SBFramework\\SBFileSystem   FILES ${SOURCES_SBFRAMEWORK_SBFILESYSTEM})
+source_group(SBFramework\\SBTexture   FILES ${SOURCES_SBFRAMEWORK_SBTEXTURE})
 
 add_library(imgui ${SOURCES_IMGUI})
 add_library(lz4 ${SOURCES_LZ4})

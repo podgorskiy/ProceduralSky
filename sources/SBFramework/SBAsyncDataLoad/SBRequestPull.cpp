@@ -6,6 +6,10 @@
 
 using namespace SB;
 
+RequestPull::RequestPull() :m_maxCount(1), m_runningCount(0)
+{
+}
+
 void RequestPull::SetUrlPrefix(const std::string& URL)
 {
 	m_urlPrefix = URL;
@@ -35,6 +39,7 @@ void RequestPull::SetCountOfSimultaneousRequests(int count)
 
 void RequestPull::Update()
 {
+	m_runningCount = m_running.size();
 	int pendingSize = m_pending.size();
 	if (m_runningCount < m_maxCount && pendingSize > 0)
 	{

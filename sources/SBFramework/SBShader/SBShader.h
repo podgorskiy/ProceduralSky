@@ -130,6 +130,8 @@ namespace SB
 		//Common uniforms
 		ShaderAttribute u_WVP;
 		ShaderAttribute u_W;
+		ShaderAttribute u_eyePosition;
+		ShaderAttribute u_time;
 
 	private:
 		int program;
@@ -173,7 +175,7 @@ namespace SB
 	template<>
 	inline void Shader::ShaderAttribute::SetValue<int>(const int& value)
 	{
-		assert(GetType() == SB_FLOAT_MAT4);
+		assert(GetType() == SB_INT || GetType() == SB_SAMPLER_2D);
 		glUniform1iv(d, 1, reinterpret_cast<const GLint*>(&value));
 	}
 

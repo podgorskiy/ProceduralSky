@@ -6,21 +6,14 @@
 
 namespace SB
 {
-	struct BufferHandle;
-	typedef std::shared_ptr<BufferHandle> BufferHandlePtr;
-
-	class MemoryFile : public IFile
+	class MemoryFileNoCopy : public IFile
 	{
 	public:
-		MemoryFile();
-
-		MemoryFile(const char* buffer, int size);
-
-		virtual char* GetPointer();
+		MemoryFileNoCopy(const char* buffer, int size);
 
 		virtual const char* GetPointerConst() const;
-
-		virtual ~MemoryFile();
+		
+		virtual ~MemoryFileNoCopy();
 
 		virtual bool Valid() const;
 
@@ -32,11 +25,17 @@ namespace SB
 
 		virtual bool Read(char* destanation, int size) const;
 
-		virtual bool Write(const char* destanation, int size);
-
 	private:
+		MemoryFileNoCopy(){};
+
+		virtual char* GetPointer(){ return nullptr; };
+
+		virtual bool Write(const char* destanation, int size) { return false; };
+
 		virtual bool Open(const std::string& filename, MODE mode){ return false; };
 
-		BufferHandlePtr m_buffer;
+		const char* m_buffer;
+		mutable int m_pointer;
+		int m_size;
 	};
 }
