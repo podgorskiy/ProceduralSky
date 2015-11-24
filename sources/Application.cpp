@@ -22,6 +22,9 @@
 #include "SBAsyncDataLoad/SBRequestData.h"
 
 #include "CityManager.h"
+#include "PostEffectRenderPlane.h"
+
+#include "FBO.h"
 
 #include <simpletext.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -37,6 +40,9 @@ SB::RequestDataPtr dataPtr;
 SB::MemoryFile data;
 
 SimpleText* stext;
+
+FBO fbo;
+PostEffectRenderPlane postplane;
 
 int Appication::Init()
 {
@@ -61,6 +67,12 @@ int Appication::Init()
 	SB::CFile fileTerrainShaderF("data/shaders/terrain.fs", SB::IFile::FILE_READ);
 	m_terrainShader = new SB::Shader;
 	m_terrainShader->CreateProgramFrom("terrain", &fileTerrainShaderV, &fileTerrainShaderF);
+	
+	SB::CFile filePostShaderV("data/shaders/post.vs", SB::IFile::FILE_READ);
+	SB::CFile filePostShaderF("data/shaders/post.fs", SB::IFile::FILE_READ);
+	m_postShader = new SB::Shader;
+	m_postShader->CreateProgramFrom("post", &filePostShaderV, &filePostShaderF);
+	postplane.Init(m_postShader);
 
 	SB::CFile fileSunShaderV("data/shaders/sun.vs", SB::IFile::FILE_READ);
 	SB::CFile fileSunShaderF("data/shaders/sun.fs", SB::IFile::FILE_READ);
@@ -87,8 +99,8 @@ int Appication::Init()
 	m_skyLuminanceXYZID = m_dynamicLightening.GetValueID("Environment.SkyLuminanceXYZ");
 	m_sunLuminanceXYZID = m_dynamicLightening.GetValueID("Environment.SunLuminanceXYZ");
 
-	glm::vec3 lookAt(-25739.3184, -60099.9180, 9936.82129);
-	glm::vec3 position(-25739.2285, -60100.9141, 9936.85254 );
+	glm::vec3 lookAt(-29935.7441 , 20656.5215 , 1647.31482);
+	glm::vec3 position( -29936.6563 , 20656.3320 , 1647.67944 );
 	glm::vec3 upVector(0, 0, 1);
 
 	m_camera = new SB::Camera;
@@ -121,10 +133,13 @@ int Appication::Init()
 	m_proceduralSky.SetSkyDirection(glm::vec3(0.0f, 0.0f, 1.0f));
 	m_sunController.SetUpVector(glm::vec3(0.0f, 0.0f, 1.0f));
 	m_sunController.SetMonth(SunController::June);
-	m_time = 9.0f;
+	m_time = 18.0f;
 
 	dataPtr = rpull.CreateRequest<SB::RequestData>("README.md", true);
 
+	int default_width = 1280;
+	int default_heght = 768;
+	fbo.Init(default_width * 2, default_heght * 2, true);
 
 	m_sceneRenderer = new SB::SceneRenderer;
 	stext = new SimpleText;
@@ -133,13 +148,18 @@ int Appication::Init()
 
 void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float deltaTime)
 {
-	m_imGuiBinding->NewFrame(screenBufferSizes);
-	DrawGUI();
+	//m_imGuiBinding->NewFrame(screenBufferSizes);
+	//DrawGUI();
+
 
 	m_sunController.Update(m_time);
 
-	glViewport(0, 0, screenBufferSizes.m_windowWidth, screenBufferSizes.m_windowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	fbo.BindFBO();
+	glViewport(0, 0, screenBufferSizes.m_windowWidth * 2, screenBufferSizes.m_windowHeight * 2);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glDepthFunc(GL_LESS);
 	glDepthMask(true);
 	glEnable(GL_DEPTH_TEST);
@@ -167,11 +187,11 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 	glm::mat4 suntransform;
 	suntransform = glm::translate(suntransform, m_camera->GetPosition() + sunDirection * 200.0f);
 	m_sun->SetLocalTransform(suntransform);
-	m_sceneRenderer->RegisterNodes(m_sun);
-	m_sceneRenderer->Render(m_camera, m_sunShader);
+	//m_sceneRenderer->RegisterNodes(m_sun);
+	//m_sceneRenderer->Render(m_camera, m_sunShader);
 
 	m_terrainShader->UseIt();
-	m_terrainShader->GetUniform("u_sunDirection").SetValue(sunDirection);
+	//m_terrainShader->GetUniform("u_sunDirection").SetValue(sunDirection);
 	m_terrainShader->GetUniform("u_sunLuminance").SetValue(sunLuminanceRGB);
 	m_terrainShader->GetUniform("u_skyLuminance").SetValue(skyLuminanceRGB);
 
@@ -184,26 +204,19 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 	m_cityManager.Draw(m_camera, m_time);
 
 	m_proceduralSky.Draw(m_camera);
-	
-	m_imGuiBinding->Render();
+
+	fbo.UnBindFBO();
+
+	glViewport(0, 0, screenBufferSizes.m_windowWidth, screenBufferSizes.m_windowHeight);
+
+	fbo.BindColorTexture(0);
+
+	postplane.Draw();
+
+	//m_imGuiBinding->Render();
 
 	stext->EnableBlending(true);
 
-	rpull.Update();
-
-	if (dataPtr)
-	{
-		if (dataPtr->IsSuceeded())
-		{
-			data = dataPtr->GetFile();
-			dataPtr = nullptr;
-		}
-	}
-
-	if (data.Valid())
-	{
-		//stext->RenderLabel(data.GetPointer(), 0, 300);
-	}
 }
 
 void Appication::DrawGUI()

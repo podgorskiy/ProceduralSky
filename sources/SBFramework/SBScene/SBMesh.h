@@ -43,6 +43,8 @@ namespace SB
 		void SetTime(float t);
 		void SetTexture(const std::string& texture);
 		const std::string& GetTexture() const;
+		void SetTexture2(const std::string& texture);
+		const std::string& GetTexture2() const;
 
 		void SetMaterialName(const std::string& materialName);
 		const std::string& GetMaterialName() const;
@@ -56,6 +58,7 @@ namespace SB
 		glm::vec3 m_eyePosition;
 		float m_time;
 		std::string m_textureFileName;
+		std::string m_textureFileName2;
 
 		VBO m_VBO;
 		

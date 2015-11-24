@@ -45,7 +45,7 @@ void SunController::UpdateSunPosition(float hour)
 		std::sin(latitude_) * std::sin(m_delta) + std::cos(latitude_) * std::cos(m_delta) * std::cos(h)
 		);
 
-	glm::vec3 direction = glm::rotate(-m_northDirection, -azimuth, m_upvector);
+	glm::vec3 direction = glm::rotate(m_northDirection, -azimuth, m_upvector);
 	glm::vec3 v = glm::cross(direction, m_upvector);
 	m_sunDirection = glm::rotate(direction, altitude, v);
 }

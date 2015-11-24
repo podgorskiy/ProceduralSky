@@ -716,10 +716,14 @@ void SceneDAEConstructor::AddChild(const pugi::xml_node& nodeE, Node* parent, No
 				{
 					(*it)->SetMaterialName(binding->second);
 					std::string instance =  m_materialInstances[binding->second];
-					SB::EffectDescription effect =  m_effects[instance];
+					SB::EffectDescription effect = m_effects[instance];
 					if (effect.diffuse.m_type == SB::EffectDescription::FixedParameter::Type::Texture)
 					{
 						(*it)->SetTexture(effect.diffuse.m_sampler);
+					}
+					if (effect.emission.m_type == SB::EffectDescription::FixedParameter::Type::Texture)
+					{
+						(*it)->SetTexture2(effect.emission.m_sampler);
 					}
 				}
 			}
