@@ -16,14 +16,14 @@ namespace SB
 
 		MemoryFile GetFile();
 
-		void SetCallback(const std::function<void(const MemoryFile& memfile)>& callback);
+		void SetCallback(const std::function<void(const IFile* file)>& callback);
 
 	private:
 		virtual void OnLoad(const void* buffer, int size);
 
-		RequestData(const std::string& URL, RequestPull* requestPull);
+		RequestData(const std::string& URL, bool copyData, RequestPull* requestPull);
 
 		MemoryFile m_memoryFile;
-		std::function<void(const MemoryFile& memfile)> m_callback;
+		std::function<void(const IFile* file)> m_callback;
 	};
 }

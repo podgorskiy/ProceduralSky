@@ -163,6 +163,8 @@ int Shader::CreateProgramFrom(const char *name, const char* pVertexShader, const
 	//Common uniforms
 	u_WVP = GetUniform("u_WVP");
 	u_W = GetUniform("u_W");
+	u_eyePosition = GetUniform("u_eyePosition");
+	u_time = GetUniform("u_time");
 	
 	#ifndef NDEBUG
 	fragmentshader = loadShader(GL_FRAGMENT_SHADER, 

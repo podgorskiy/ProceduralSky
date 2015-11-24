@@ -33,6 +33,9 @@ namespace SB
 		virtual bool Write(const char* source, int size);
 
 	private:
+		virtual const char* GetPointerConst() const { return nullptr; };
+		virtual char* GetPointer() { return nullptr; };
+
 		const char* GetMode(MODE mode);
 		FileHandlePtr m_file;
 	};

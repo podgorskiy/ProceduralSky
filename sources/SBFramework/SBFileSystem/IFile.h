@@ -22,6 +22,10 @@ namespace SB
 			FILE_APPEND_UPDATE
 		};
 
+		virtual const char* GetPointerConst() const = 0;
+
+		virtual char* GetPointer() = 0;
+
 		virtual bool Open(const std::string& filename, MODE mode) = 0;
 		
 		virtual bool Valid() const = 0;

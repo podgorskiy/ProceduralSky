@@ -36,7 +36,7 @@ public:
 
 	float GetLatitude();
 
-	const glm::vec3& GetSunDirection();
+	glm::vec3 GetSunDirection();
 
 private:
 	void CalculateSunOrbit();

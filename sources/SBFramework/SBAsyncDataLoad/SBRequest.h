@@ -25,7 +25,7 @@ namespace SB
 	private:
 		void Start();
 
-		Request(const std::string& URL, RequestPull* requestPull);
+		Request(const std::string& URL, bool copyData, RequestPull* requestPull);
 		
 		void OnError();
 
@@ -35,6 +35,7 @@ namespace SB
 		
 		bool m_done;
 		bool m_failed;
+		bool m_copyData;
 		std::string m_url;
 	};
 }

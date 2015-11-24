@@ -4,6 +4,24 @@ import time
 import atexit
 from SCons.Defaults import *
 
+release = True
+
+if(release):
+	optimization = '-Os'
+	debug = '-g0'
+	lto = "1"
+	closure = "1"
+	assertions = "0"
+	demangle = "0"
+else:
+	optimization = '-O0'
+	debug = '-g3'
+	lto = "0"
+	closure = "0"
+	assertions = "2"
+	demangle = "1"
+
+
 def main():
 	env = Environment(ENV = os.environ, tools = ['gcc', 'g++', 'gnulink', 'ar', 'gas'])
 		
@@ -21,15 +39,18 @@ def main():
  	env.Replace(OBJSUFFIX  = ".o")
  	env.Replace(PROGSUFFIX = ".js")
 	
-	env.Append( CPPFLAGS=['-Os'] )
+	env.Append( CPPFLAGS=[optimization] )
 	env.Append( LINKFLAGS=[
-		"-Os",
+		optimization,
+		debug,
+		"-s", "ASSERTIONS=" + assertions,
+		"-s", "DEMANGLE_SUPPORT=" + demangle,
 		"-s", "TOTAL_MEMORY=600000000",
-		"--llvm-lto", "1",
-		"--closure", "1",
+		"--llvm-lto", lto,
+		"--closure", closure,
 		"-s", "NO_EXIT_RUNTIME=1",
 		"-s", "DISABLE_EXCEPTION_CATCHING=1",
-		"-s", "EXPORTED_FUNCTIONS=\"['_main','_resizeModule']\"",
+		"-s", "EXPORTED_FUNCTIONS=\"['_main','_resizeModule','_putchar']\"",
 		"--preload-file", "data"
 	] )
 
@@ -68,7 +89,7 @@ def main():
 	env.Library('imgui', imguiSources)
 	env.Library('lz4', lz4Sources)
 	
-	program = env.Program('ProceduralSky', files, LIBS=['imgui', 'pugi', 'lz4'], LIBPATH='.', CPPPATH = Includes)
+	program = env.Program('ProceduralSky', files, LIBS=['imgui', 'pugi', 'lz4'], CPPFLAGS=[optimization, '-std=c++11', debug], LIBPATH='.', CPPPATH = Includes)
 	
 	env.Depends(program, GlobR("data", "*"))
 	

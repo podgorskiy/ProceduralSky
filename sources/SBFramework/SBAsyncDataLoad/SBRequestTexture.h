@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "SBTexture/SBTexture.h"
 
 namespace SB
 {
@@ -12,9 +13,13 @@ namespace SB
 		friend class SB::RequestPull;
 	public:
 
-	private:
-		virtual void OnLoad(const void* buffer, int size){};
+		SB::TexturePtr GetTexture();
 
-		RequestTexture(const std::string& URL, RequestPull* requestPull) : Request(URL, requestPull){};
+	private:
+		virtual void OnLoad(const void* buffer, int size);
+
+		RequestTexture(const std::string& URL, bool copyData, RequestPull* requestPull);
+
+		SB::TexturePtr m_texture;
 	};
 }

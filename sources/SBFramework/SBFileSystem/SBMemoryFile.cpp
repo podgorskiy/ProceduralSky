@@ -69,6 +69,11 @@ char* MemoryFile::GetPointer()
 	return m_buffer->m_buffer;
 }
 
+const char* MemoryFile::GetPointerConst() const
+{
+	return m_buffer->m_buffer;
+}
+
 bool MemoryFile::Valid() const
 {
 	return m_buffer != nullptr;
