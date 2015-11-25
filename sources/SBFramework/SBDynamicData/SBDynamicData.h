@@ -39,10 +39,10 @@ namespace SB
 		/* Returns value by id for the time that was passed. If value is constant, the value of time does not matter.
 		Template parameter can be:
 		float,
-		glitch::core::vector2df,
-		glitch::core::vector3df,
-		glitch::core::vector4df,
-		(glitch::core::quaternion)
+		glm::vec2,
+		glm::vec3,
+		glm::vec4,
+		glm::quat
 		If wrong type is passed, then the assert is thrown. **/
 		template<typename T> T GetValueByID(ValueID id, float time) const;
 
