@@ -243,14 +243,14 @@ void CityManager::PushCityBatch(const SB::IFile* file)
 			SB::RequestTexturePtr r = m_rpull.CreateRequest<SB::RequestTexture>(mesh->GetTexture() + ".pvr", false);
 			m_textures[mesh->GetTexture()] = r->GetTexture();
 		}
-		if (m_textures.find(mesh->GetTexture2()) == m_textures.end())
-		{
-			std::string ligtmap = mesh->GetTexture2();
-			replace(ligtmap, "lightmap00", "lightmap02");
-			mesh->SetTexture2(ligtmap);
-			SB::RequestTexturePtr r = m_rpull.CreateRequest<SB::RequestTexture>(mesh->GetTexture2() + ".pvr", false);
-			m_textures[mesh->GetTexture2()] = r->GetTexture();
-		}
+		//if (m_textures.find(mesh->GetTexture2()) == m_textures.end())
+		//{
+		//	std::string ligtmap = mesh->GetTexture2();
+		//	replace(ligtmap, "lightmap00", "lightmap02");
+		//	mesh->SetTexture2(ligtmap);
+		//	SB::RequestTexturePtr r = m_rpull.CreateRequest<SB::RequestTexture>(mesh->GetTexture2() + ".pvr", false);
+		//	m_textures[mesh->GetTexture2()] = r->GetTexture();
+		//}
 	
 		mesh->CreateVBO();
 		glm::mat4 transform(1.0f);
@@ -262,7 +262,7 @@ void CityManager::Draw(SB::Camera* camera, float time)
 {
 	m_terrainShader->UseIt();
 	m_terrainShader->GetUniform("u_texture").SetValue(0);
-	m_terrainShader->GetUniform("u_lightmap").SetValue(1);
+	//m_terrainShader->GetUniform("u_lightmap").SetValue(1);
 	m_sceneRenderer->Render(m_renderlistCity, camera, m_terrainShader, &m_textures);
 
 	m_waterShader->UseIt();

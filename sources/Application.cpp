@@ -148,8 +148,8 @@ int Appication::Init()
 
 void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float deltaTime)
 {
-	//m_imGuiBinding->NewFrame(screenBufferSizes);
-	//DrawGUI();
+	m_imGuiBinding->NewFrame(screenBufferSizes);
+	DrawGUI();
 
 
 	m_sunController.Update(m_time);
@@ -187,11 +187,11 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 	glm::mat4 suntransform;
 	suntransform = glm::translate(suntransform, m_camera->GetPosition() + sunDirection * 200.0f);
 	m_sun->SetLocalTransform(suntransform);
-	//m_sceneRenderer->RegisterNodes(m_sun);
-	//m_sceneRenderer->Render(m_camera, m_sunShader);
+	m_sceneRenderer->RegisterNodes(m_sun);
+	m_sceneRenderer->Render(m_camera, m_sunShader);
 
 	m_terrainShader->UseIt();
-	//m_terrainShader->GetUniform("u_sunDirection").SetValue(sunDirection);
+	m_terrainShader->GetUniform("u_sunDirection").SetValue(sunDirection);
 	m_terrainShader->GetUniform("u_sunLuminance").SetValue(sunLuminanceRGB);
 	m_terrainShader->GetUniform("u_skyLuminance").SetValue(skyLuminanceRGB);
 
@@ -213,7 +213,7 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 
 	postplane.Draw();
 
-	//m_imGuiBinding->Render();
+	m_imGuiBinding->Render();
 
 	stext->EnableBlending(true);
 

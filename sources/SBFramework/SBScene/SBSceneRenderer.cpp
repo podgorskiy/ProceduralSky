@@ -39,11 +39,11 @@ void SceneRenderer::Render(const SceneRenderer::RenderList& renderlist, const Ca
 			{
 				(*itt).second->Bind(0);
 			}
-			std::map<std::string, SB::TexturePtr>::const_iterator ittl = textures->find(it->second->GetTexture2());
-			if (ittl != textures->end())
-			{
-				(*ittl).second->Bind(1);
-			}
+			//std::map<std::string, SB::TexturePtr>::const_iterator ittl = textures->find(it->second->GetTexture2());
+			//if (ittl != textures->end())
+			//{
+			//	(*ittl).second->Bind(1);
+			//}
 		}
 		it->second->SetWorldMatrix(it->first);
 		it->second->SetWorldViewProjectionMatrix(viewProjection * it->first);
