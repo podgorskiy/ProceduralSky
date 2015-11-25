@@ -7,6 +7,7 @@ public:
 	GLuint renderTexture;
 	GLuint depthTexture;
 	FBO():frameBuffer(0),renderTexture(0),depthTexture(0){};
+	void Free();
 	int Init(int w,int h, bool linear = false);
     void GetSize(int& w, int& h) const;
 	void BindFBO();
