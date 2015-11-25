@@ -3,7 +3,8 @@
 #include "SBBasicEvents.h"
 #include "ProceduralSky.h"
 #include "SunController.h"
-#include "CityManager.h"
+#include "SBTexture/SBTexture.h"
+#include "SBAsyncDataLoad/SBRequestPull.h"
 
 namespace SB
 {
@@ -53,11 +54,12 @@ private:
 	SB::DynamicLighteningProperties::ValueID m_expositionID;
 	SB::DynamicLighteningProperties::ValueID m_skyLuminanceXYZID;
 	SB::DynamicLighteningProperties::ValueID m_sunLuminanceXYZID;
-
-	CityManager m_cityManager;
-
+	
 	bool m_touchWasConsumedByImGUI;
 
 	float m_fontSize;
 	float m_scale;
+
+	SB::RequestPull m_rpull;
+	SB::TexturePtr m_lightmap;
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdio>
 #include <cassert>
+#include <cstring>
 
 #define LOG__(...) (void)printf(__VA_ARGS__);
 #define LOG_(...) (void)printf(__VA_ARGS__);printf("\n");
@@ -12,6 +13,11 @@
 
 namespace SB
 {
+	inline bool CheckExtension(const unsigned char * extensionsList, const char* extension)
+	{
+		return  strstr(reinterpret_cast<const char *>(extensionsList), extension) != NULL;
+	}
+
 	template <typename T>
 	T MAX(T a, T b)
 	{

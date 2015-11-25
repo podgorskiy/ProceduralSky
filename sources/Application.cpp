@@ -1,5 +1,6 @@
 ﻿#include "Application.h"
 
+#include "SBCommon.h"
 #include "SBShader/SBShader.h"
 #include "SBScene/SBSceneDAEConstructor.h"
 #include "SBScene/SBMeshBufferConstructor.h"
@@ -9,6 +10,8 @@
 #include "SBScene/SBSceneSerializer.h"
 #include "SBScene/SBSceneUtils.h" 
 #include "SBFileSystem/SBCFile.h"
+#include "SBAsyncDataLoad/SBRequest.h"
+#include "SBAsyncDataLoad/SBRequestTexture.h"
 #include "SBCamera.h"
 #include "SBColorUtils.h"
 #include "SBEventManager.h"
@@ -16,15 +19,6 @@
 #include "SBOpenGLHeaders.h"
 #include "SBImGuiBinding.h"
 #include "SBCameraFreeFlightController.h"
-
-
-#include "SBAsyncDataLoad/SBRequestPull.h"
-#include "SBAsyncDataLoad/SBRequestData.h"
-
-#include "CityManager.h"
-#include "PostEffectRenderPlane.h"
-
-#include "FBO.h"
 
 #include <simpletext.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -34,28 +28,9 @@
 #include <vector>
 
 
-SB::RequestPull rpull;
-
-SB::RequestDataPtr dataPtr;
-SB::MemoryFile data;
-
-SimpleText* stext;
-
-FBO fbo;
-PostEffectRenderPlane postplane;
-
 int Appication::Init()
 {
-	if (gl3wInit())
-	{
-		std::cerr << "failed to initialize OpenGL";
-		return EXIT_FAILURE;
-	}
-
-	if (!gl3wIsSupported(3, 2)) {
-		std::cerr << "OpenGL 3.2 not supported";
-		return EXIT_FAILURE;
-	}
+	gl3wInit();
 
 	std::cout << "OpenGL " << glGetString(GL_VERSION)
 		<< " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
@@ -67,21 +42,11 @@ int Appication::Init()
 	SB::CFile fileTerrainShaderF("data/shaders/terrain.fs", SB::IFile::FILE_READ);
 	m_terrainShader = new SB::Shader;
 	m_terrainShader->CreateProgramFrom("terrain", &fileTerrainShaderV, &fileTerrainShaderF);
-	
-	SB::CFile filePostShaderV("data/shaders/post.vs", SB::IFile::FILE_READ);
-	SB::CFile filePostShaderF("data/shaders/post.fs", SB::IFile::FILE_READ);
-	m_postShader = new SB::Shader;
-	m_postShader->CreateProgramFrom("post", &filePostShaderV, &filePostShaderF);
-	postplane.Init(m_postShader);
 
 	SB::CFile fileSunShaderV("data/shaders/sun.vs", SB::IFile::FILE_READ);
 	SB::CFile fileSunShaderF("data/shaders/sun.fs", SB::IFile::FILE_READ);
 	m_sunShader = new SB::Shader;
 	m_sunShader->CreateProgramFrom("terrain", &fileSunShaderV, &fileSunShaderF);
-
-	m_cityManager.Init();
-	m_cityManager.SetShader(m_terrainShader);
-	m_cityManager.SetDynamicLightening(&m_dynamicLightening);
 
 	SB::SceneDAEConstructor sc;
 	sc.OpenDAE("data/test_scene.dae");
@@ -99,13 +64,13 @@ int Appication::Init()
 	m_skyLuminanceXYZID = m_dynamicLightening.GetValueID("Environment.SkyLuminanceXYZ");
 	m_sunLuminanceXYZID = m_dynamicLightening.GetValueID("Environment.SunLuminanceXYZ");
 
-	glm::vec3 lookAt(-29935.7441 , 20656.5215 , 1647.31482);
-	glm::vec3 position( -29936.6563 , 20656.3320 , 1647.67944 );
-	glm::vec3 upVector(0, 0, 1);
+	glm::vec3 lookAt(-14.0f, -45.0f, 12.2f);
+	glm::vec3 position(-15.0f, -50.0f, 12.0f);
+	glm::vec3 upVector(0.0f, 0.0f, 1.0f);
 
 	m_camera = new SB::Camera;
 	m_camera->SetFOV(60.0f / 180.0f*3.14f);
-	m_camera->SetNearFarPlanes(100.0f, 3000.0f * 100.0f);
+	m_camera->SetNearFarPlanes(1.0f, 1000.0f);
 	
 	m_camera->SetPosition(position);
 	m_camera->SetUpVector(upVector);
@@ -123,7 +88,7 @@ int Appication::Init()
 
 	m_cameraController = new SB::CameraFreeFlightController;
 	m_cameraController->AttachCamera(m_camera);
-	m_cameraController->SetSpeed(300.0f);
+	m_cameraController->SetSpeed(0.5f);
 
 	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseButtonEvent>(m_cameraController);
 	m_eventManager->AttachReceiver<SB::BasicEvents::OnMouseMoveEvent>(m_cameraController);
@@ -133,37 +98,39 @@ int Appication::Init()
 	m_proceduralSky.SetSkyDirection(glm::vec3(0.0f, 0.0f, 1.0f));
 	m_sunController.SetUpVector(glm::vec3(0.0f, 0.0f, 1.0f));
 	m_sunController.SetMonth(SunController::June);
-	m_time = 18.0f;
+	m_time = 6.0f;
 
-	dataPtr = rpull.CreateRequest<SB::RequestData>("README.md", true);
+	m_rpull.SetUrlPrefix("async_data/");
+	
+	const unsigned char* extensions = glGetString(GL_EXTENSIONS);
 
+	bool DXT1_extension =	SB::CheckExtension(extensions, "GL_EXT_texture_compression_s3tc") || 
+							SB::CheckExtension(extensions, "WEBGL_compressed_texture_s3tc");
 
+	bool PVRTC_extension =	SB::CheckExtension(extensions, "GL_IMG_texture_compression_pvrtc") || 
+							SB::CheckExtension(extensions, "WEBGL_compressed_texture_pvrtc");
+
+	if (DXT1_extension)
+	{
+		m_lightmap = m_rpull.CreateRequest<SB::RequestTexture>("BC1/lightmap.pvr", false)->GetTexture();
+	}
+	else if (PVRTC_extension)
+	{
+		m_lightmap = m_rpull.CreateRequest<SB::RequestTexture>("PVRTC/lightmap.pvr", false)->GetTexture();
+	}
+	
 	m_sceneRenderer = new SB::SceneRenderer;
-	stext = new SimpleText;
 	return EXIT_SUCCESS;
 }
 
 void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float deltaTime)
 {
-	//m_imGuiBinding->NewFrame(screenBufferSizes);
-	//DrawGUI();
-
-	static int width = 0;
-	static int height = 0;
-	
-	if (width != screenBufferSizes.m_framebufferWidth || height != screenBufferSizes.m_framebufferHeight)
-	{
-		width = screenBufferSizes.m_framebufferWidth;
-		height = screenBufferSizes.m_framebufferHeight;
-		fbo.Init(width * 2, height * 2, true);
-	}
+	m_imGuiBinding->NewFrame(screenBufferSizes);
+	DrawGUI();
 	
 	m_sunController.Update(m_time);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	fbo.BindFBO();
-	glViewport(0, 0, screenBufferSizes.m_windowWidth * 2, screenBufferSizes.m_windowHeight * 2);
+	glViewport(0, 0, screenBufferSizes.m_windowWidth, screenBufferSizes.m_windowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glDepthFunc(GL_LESS);
@@ -193,36 +160,24 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 	glm::mat4 suntransform;
 	suntransform = glm::translate(suntransform, m_camera->GetPosition() + sunDirection * 200.0f);
 	m_sun->SetLocalTransform(suntransform);
-	//m_sceneRenderer->RegisterNodes(m_sun);
-	//m_sceneRenderer->Render(m_camera, m_sunShader);
+	m_sceneRenderer->RegisterNodes(m_sun);
+	m_sceneRenderer->Render(m_camera, m_sunShader);
 
 	m_terrainShader->UseIt();
-	//m_terrainShader->GetUniform("u_sunDirection").SetValue(sunDirection);
+	m_terrainShader->GetUniform("u_lightmap").SetValue(0);
+	m_lightmap->Bind(0);
+	m_terrainShader->GetUniform("u_sunDirection").SetValue(sunDirection);
 	m_terrainShader->GetUniform("u_sunLuminance").SetValue(sunLuminanceRGB);
 	m_terrainShader->GetUniform("u_skyLuminance").SetValue(skyLuminanceRGB);
 
 	m_sceneRenderer->RegisterNodes(m_rootScene);
 	m_sceneRenderer->Render(m_camera, m_terrainShader);
-
-	m_cityManager.SetSunDirection(sunDirection);
-	m_cityManager.SetSunLuminance(sunLuminanceRGB);
-	m_cityManager.SetSkyLuminance(skyLuminanceRGB);
-	m_cityManager.Draw(m_camera, m_time);
-
+	
 	m_proceduralSky.Draw(m_camera);
 
-	fbo.UnBindFBO();
+	m_imGuiBinding->Render();
 
-	glViewport(0, 0, screenBufferSizes.m_windowWidth, screenBufferSizes.m_windowHeight);
-
-	fbo.BindColorTexture(0);
-
-	postplane.Draw();
-
-	//m_imGuiBinding->Render();
-
-	stext->EnableBlending(true);
-
+	m_rpull.Update();
 }
 
 void Appication::DrawGUI()
@@ -264,7 +219,6 @@ void Appication::DrawGUI()
 
 void Appication::SetUpScale()
 {
-	m_fontSize = 15;
 	m_scale = 1;
 
 #ifdef __EMSCRIPTEN__
@@ -281,7 +235,6 @@ void Appication::SetUpScale()
 	}
 	);
 	m_scale = devicePixelRatio;
-	m_fontSize = m_fontSize * devicePixelRatio;
 #endif
 }
 

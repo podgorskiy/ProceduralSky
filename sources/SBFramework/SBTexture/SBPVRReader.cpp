@@ -78,6 +78,49 @@ void PVRReader::DeSerializeTexture(Texture* texture, const IFile* file)
 		p = tempBuffer;
 	}
 
+	int blockSizeBytes = 0;
+	int blockSizeTexels = 0;
+	unsigned int compressionType = 0;
+	switch (header.pixelFormatCompressed)
+	{
+	case Texture::ePVRTPF_DXT1:
+		compressionType = COMPRESSED_RGB_S3TC_DXT1_EXT;
+		blockSizeBytes = 8;
+		blockSizeTexels = 16;
+		break;
+	case Texture::ePVRTPF_DXT2:
+	case Texture::ePVRTPF_DXT3:
+		compressionType = COMPRESSED_RGBA_S3TC_DXT3_EXT;
+		blockSizeBytes = 16;
+		blockSizeTexels = 16;
+		break;
+	case Texture::ePVRTPF_DXT4:
+	case Texture::ePVRTPF_DXT5:
+		compressionType = COMPRESSED_RGBA_S3TC_DXT5_EXT;
+		blockSizeBytes = 16;
+		blockSizeTexels = 16;
+	case Texture::ePVRTPF_PVRTCI_2bpp_RGB:
+		compressionType = COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
+		blockSizeBytes = 8;
+		blockSizeTexels = 32;
+		break;
+	case Texture::ePVRTPF_PVRTCI_2bpp_RGBA:
+		compressionType = COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
+		blockSizeBytes = 8;
+		blockSizeTexels = 32;
+		break;
+	case Texture::ePVRTPF_PVRTCI_4bpp_RGB:
+		compressionType = COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
+		blockSizeBytes = 8;
+		blockSizeTexels = 16;
+		break;
+	case Texture::ePVRTPF_PVRTCI_4bpp_RGBA:
+		compressionType = COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
+		blockSizeBytes = 8;
+		blockSizeTexels = 16;
+		break;
+	}
+
 	int mipmapDivider = 1;
 	for (int mipmap = 0; mipmap < header.MIPMapCount; ++mipmap)
 	{
@@ -85,23 +128,16 @@ void PVRReader::DeSerializeTexture(Texture* texture, const IFile* file)
 		{
 			if (header.pixelFormatUncompressed == 0)
 			{
-				if (header.pixelFormatCompressed == Texture::ePVRTPF_DXT1)
+				int width = header.width / mipmapDivider;
+				int height = header.height / mipmapDivider;
+				int size = (width * height * blockSizeBytes) / blockSizeTexels;
+				if (size < blockSizeBytes)
 				{
-					int width = header.width / mipmapDivider;
-					int height = header.height / mipmapDivider;
-					int size = (width * height * 8) / 16;
-					if (size < 8)
-					{
-						size = 8;
-					}
-					int faceType = header.cubemap ? (GL_TEXTURE_CUBE_MAP_POSITIVE_X + face) : GL_TEXTURE_2D;
-					glCompressedTexImage2D(faceType, mipmap, COMPRESSED_RGB_S3TC_DXT1_EXT, width, height, 0, size, p);
-					p += size;
+					size = blockSizeBytes;
 				}
-				else
-				{
-					assert(false);
-				}
+				int faceType = header.cubemap ? (GL_TEXTURE_CUBE_MAP_POSITIVE_X + face) : GL_TEXTURE_2D;
+				glCompressedTexImage2D(faceType, mipmap, compressionType, width, height, 0, size, p);
+				p += size;
 			}
 			else
 			{
