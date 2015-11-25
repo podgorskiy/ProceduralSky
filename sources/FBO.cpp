@@ -85,21 +85,26 @@ void FBO::BindDepthTexture(int unit){
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
 }
 
-FBO::~FBO(){	
+FBO::~FBO()
+{
+	Free();
+};
+
+void FBO::Free()
+{
 	if (glIsFramebuffer(frameBuffer)){
-		glDeleteFramebuffers(1,&frameBuffer);
+		glDeleteFramebuffers(1, &frameBuffer);
 		frameBuffer = 0;
 	}
 	if (glIsTexture(renderTexture)){
-		glDeleteTextures(1,&renderTexture);
+		glDeleteTextures(1, &renderTexture);
 		renderTexture = 0;
 	}
 	if (glIsTexture(depthTexture)){
-		glDeleteTextures(1,&depthTexture);
+		glDeleteTextures(1, &depthTexture);
 		depthTexture = 0;
 	}
-};
-
+}
 
 void FBO::GetSize(int& w, int& h) const
 {

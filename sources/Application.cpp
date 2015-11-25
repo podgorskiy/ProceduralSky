@@ -137,9 +137,6 @@ int Appication::Init()
 
 	dataPtr = rpull.CreateRequest<SB::RequestData>("README.md", true);
 
-	int default_width = 1280;
-	int default_heght = 768;
-	fbo.Init(default_width * 2, default_heght * 2, true);
 
 	m_sceneRenderer = new SB::SceneRenderer;
 	stext = new SimpleText;
@@ -151,7 +148,16 @@ void Appication::Update(const SB::ScreenBufferSizes& screenBufferSizes, float de
 	//m_imGuiBinding->NewFrame(screenBufferSizes);
 	//DrawGUI();
 
-
+	static int width = 0;
+	static int height = 0;
+	
+	if (width != screenBufferSizes.m_framebufferWidth || height != screenBufferSizes.m_framebufferHeight)
+	{
+		width = screenBufferSizes.m_framebufferWidth;
+		height = screenBufferSizes.m_framebufferHeight;
+		fbo.Init(width * 2, height * 2, true);
+	}
+	
 	m_sunController.Update(m_time);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

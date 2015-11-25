@@ -1,4 +1,3 @@
-#include <GL/glfw.h>
 #include <emscripten/emscripten.h>
 #include <emscripten/html5.h>
 
@@ -11,12 +10,12 @@
 #include "SBBasicEvents.h"
 
 Appication app;
+SB::ScreenBufferSizes screenBufferSizes;
 
 extern  "C"
 {
 	void resizeModule(int w, int h)
 	{
-		glfwSetWindowSize(w, h);
 		emscripten_set_canvas_size(w, h);
 	}
 }
@@ -27,90 +26,9 @@ void error_callback(int error, const char* description)
 }
 
 static EM_BOOL touchCb(int eventType, const EmscriptenTouchEvent* event, void* userData);
+static EM_BOOL mouseCb(int eventType, const EmscriptenMouseEvent* event, void* userData);
+static EM_BOOL keyCb(int eventType, const EmscriptenKeyboardEvent* event, void* userData);
 
-static void MouseButtonCallback(int button, int action)
-{
-	SB::BasicEvents::ButtonType buttonType = SB::BasicEvents::MOUSE_BUTTON_NONE;
-	SB::BasicEvents::ActionType actionType = SB::BasicEvents::ACTION_NONE;
-	switch (button)
-	{
-	case GLFW_MOUSE_BUTTON_LEFT:
-		buttonType = SB::BasicEvents::MOUSE_BUTTON_LEFT;
-		break;
-	case GLFW_MOUSE_BUTTON_RIGHT:
-		buttonType = SB::BasicEvents::MOUSE_BUTTON_RIGHT;
-		break;
-	case GLFW_MOUSE_BUTTON_MIDDLE:
-		buttonType = SB::BasicEvents::MOUSE_BUTTON_MIDDLE;
-		break;
-	}
-	switch (action)
-	{
-	case GLFW_PRESS:
-		actionType = SB::BasicEvents::ACTION_PRESS;
-		break;
-	case GLFW_RELEASE:
-		actionType = SB::BasicEvents::ACTION_RELEASE;
-		break;
-	}
-	SB::BasicEvents::OnMouseButtonEvent buttonEvent;
-	buttonEvent.button = buttonType;
-	buttonEvent.action = actionType;
-	app.OnMousePressed(buttonEvent);
-}
-
-static void MouseMoveCallback(int x, int y)
-{
-	SB::BasicEvents::OnMouseMoveEvent moveEvent;
-	moveEvent.x = x;
-	moveEvent.y = y;
-	app.OnMouseMove(moveEvent);
-}
-
-static void ScrollCallback(int)
-{
-	//app.MouseWheelTurned(yoffset);
-}
-
-static void KeyCallback(int key, int action)
-{
-	SB::BasicEvents::OnKeyEvent keyEvent;
-	switch (action)
-	{
-	case GLFW_PRESS:
-		keyEvent.action = SB::BasicEvents::ACTION_PRESS;
-		break;
-	case GLFW_RELEASE:
-		keyEvent.action = SB::BasicEvents::ACTION_RELEASE;
-		break;
-	}	
-	
-	switch (key)
-	{
-	case 'W':
-		keyEvent.key = SB::BasicEvents::KEY_W;
-		break;
-	case 'A':
-		keyEvent.key = SB::BasicEvents::KEY_A;
-		break;
-	case 'S':
-		keyEvent.key = SB::BasicEvents::KEY_S;
-		break;
-	case 'D':
-		keyEvent.key = SB::BasicEvents::KEY_D;
-		break;
-	}
-	
-	keyEvent.rawKey = key;
-	app.OnKeyPressed(keyEvent);
-}
-
-void CharCallback(int character, int action)
-{
-	//ImGuiIO& io = ImGui::GetIO();
-	//if (c > 0 && c < 0x10000)
-	//	io.AddInputCharacter((unsigned short)c);
-}
 
 void Iteration()
 {
@@ -121,38 +39,21 @@ void Iteration()
 	);
 
 	static double lastFrame = 0;
+	int isFullscreen;
+	emscripten_get_canvas_size(&screenBufferSizes.m_windowWidth, &screenBufferSizes.m_windowHeight, &isFullscreen);
 
-	SB::ScreenBufferSizes screenBufferSizes;
-	glfwGetWindowSize(&screenBufferSizes.m_windowWidth, &screenBufferSizes.m_windowHeight);
 	screenBufferSizes.m_framebufferWidth = screenBufferSizes.m_windowWidth;
 	screenBufferSizes.m_framebufferHeight = screenBufferSizes.m_windowHeight;
 
-	double currentFrame = glfwGetTime();
+	double currentFrame = emscripten_get_now() / 1000.0;
 	double deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
 	app.Update(screenBufferSizes, static_cast<float>(deltaTime));
-		
-	glfwSwapBuffers();
-	glfwPollEvents();
 }
 
 int main()
 {
-	std::cout << "Compiled against GLFW " << GLFW_VERSION_MAJOR << "." << GLFW_VERSION_MINOR << "." << GLFW_VERSION_REVISION << std::endl;
-
-	if (!glfwInit())
-	{
-		std::cerr << "Failed to initialize GLFW";
-		std::exit(EXIT_FAILURE);
-	}
-
-	glfwOpenWindowHint(GLFW_DEPTH_BITS, 24);
-	glfwOpenWindowHint(GLFW_RED_BITS, 8);
-	glfwOpenWindowHint(GLFW_GREEN_BITS, 8);
-	glfwOpenWindowHint(GLFW_BLUE_BITS, 8);
-	glfwOpenWindowHint(GLFW_ALPHA_BITS, 8);
-
 	float scale = 1;
 #ifdef __EMSCRIPTEN__
 	float devicePixelRatio = EM_ASM_DOUBLE_V(
@@ -170,46 +71,48 @@ int main()
 	scale = devicePixelRatio;
 #endif
 
-	int default_width = 1280;
-	int default_heght = 768;
-
-	if (scale > 1.0f)
-	{
-		default_width *= 1.5f;
-		default_heght *= 1.5f;
-	}
-	/*
-	default_width = EM_ASM_INT_V(
-	{
-		Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
-	}
-	);
-	default_heght = EM_ASM_INT_V(
-	{
-		Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
-	}
-	);
-	*/
-	printf("%d %d \n", default_width, default_heght);
-
-	if (!glfwOpenWindow(default_width, default_heght, 8, 8, 8, 0, 24, 0, GLFW_WINDOW))
-	{
-		glfwTerminate();
-		std::cerr << "Failed to create window";
-		std::exit(EXIT_FAILURE);
-	}
-
+	
 	emscripten_set_touchstart_callback("#canvas", NULL, true, touchCb);
 	emscripten_set_touchend_callback("#canvas", NULL, true, touchCb);
 	emscripten_set_touchmove_callback("#canvas", NULL, true, touchCb);
 	emscripten_set_touchcancel_callback("#canvas", NULL, true, touchCb);
 
-	glfwSetMouseButtonCallback(MouseButtonCallback);
-	glfwSetMousePosCallback(MouseMoveCallback);
+	emscripten_set_mousedown_callback("#canvas", NULL, true, mouseCb);
+	emscripten_set_mouseup_callback("#canvas", NULL, true, mouseCb);
+	emscripten_set_mousemove_callback("#canvas", NULL, true, mouseCb);
 
-	glfwSetMouseWheelCallback(ScrollCallback);
-	glfwSetKeyCallback(KeyCallback);
-	glfwSetCharCallback(CharCallback);
+	emscripten_set_keypress_callback(NULL, NULL, true, keyCb);
+	emscripten_set_keydown_callback(NULL, NULL, true, keyCb);
+	emscripten_set_keyup_callback(NULL, NULL, true, keyCb);
+
+	//emscripten_set_wheel_callback("#canvas", this, true, wheelCb);
+	
+	EmscriptenFullscreenStrategy fullscreenStrategy = {};
+	fullscreenStrategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_DEFAULT;
+	fullscreenStrategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_NONE;
+	fullscreenStrategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+
+	emscripten_request_fullscreen_strategy("#canvas", false, &fullscreenStrategy);
+
+	EmscriptenWebGLContextAttributes contextAttrubutes;
+	emscripten_webgl_init_context_attributes(&contextAttrubutes);
+	contextAttrubutes.alpha = false;
+	contextAttrubutes.depth = true;
+	contextAttrubutes.stencil = false;
+	contextAttrubutes.antialias = false;
+	contextAttrubutes.premultipliedAlpha = false;
+	contextAttrubutes.preserveDrawingBuffer = false;
+	contextAttrubutes.preferLowPowerToHighPerformance = false;
+	contextAttrubutes.failIfMajorPerformanceCaveat = false;
+	contextAttrubutes.enableExtensionsByDefault = true;
+
+
+	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE handle = emscripten_webgl_create_context("#canvas", &contextAttrubutes);
+	emscripten_webgl_make_context_current(handle);
+
+	int isFullscreen;
+
+	emscripten_get_canvas_size(&screenBufferSizes.m_windowWidth, &screenBufferSizes.m_windowHeight, &isFullscreen);
 
 	app.Init();
 		
@@ -218,7 +121,92 @@ int main()
 	return 0;
 }
 
+EM_BOOL keyCb(int eventType, const EmscriptenKeyboardEvent *event, void *userData)
+{
+	if (event == NULL)
+	{
+		return false;
+	}
 
+	SB::BasicEvents::OnKeyEvent keyEvent;
+	switch (eventType)
+	{
+	case EMSCRIPTEN_EVENT_KEYPRESS:
+	case EMSCRIPTEN_EVENT_KEYDOWN:
+		keyEvent.action = SB::BasicEvents::ACTION_PRESS;
+		break;
+	case EMSCRIPTEN_EVENT_KEYUP:
+		keyEvent.action = SB::BasicEvents::ACTION_RELEASE;
+		break;
+	}
+
+	switch (event->keyCode)
+	{
+	case 'W':
+		keyEvent.key = SB::BasicEvents::KEY_W;
+		break;
+	case 'A':
+		keyEvent.key = SB::BasicEvents::KEY_A;
+		break;
+	case 'S':
+		keyEvent.key = SB::BasicEvents::KEY_S;
+		break;
+	case 'D':
+		keyEvent.key = SB::BasicEvents::KEY_D;
+		break;
+	}
+
+	keyEvent.rawKey = event->keyCode;
+	app.OnKeyPressed(keyEvent);
+
+	return true;
+}
+
+EM_BOOL mouseCb(int eventType, const EmscriptenMouseEvent* event, void* userData)
+{
+	if (event == NULL)
+	{
+		return false;
+	}
+
+	switch (eventType)
+	{
+	case EMSCRIPTEN_EVENT_MOUSEMOVE:
+	{
+		SB::BasicEvents::OnMouseMoveEvent moveEvent;
+		moveEvent.x = event->canvasX;
+		moveEvent.y = event->canvasY;
+		app.OnMouseMove(moveEvent);
+		return true;
+	}
+	case EMSCRIPTEN_EVENT_MOUSEDOWN:
+		SB::BasicEvents::OnMouseMoveEvent moveEvent;
+		moveEvent.x = event->canvasX;
+		moveEvent.y = event->canvasY;
+		app.OnMouseMove(moveEvent);
+		SB::BasicEvents::OnMouseButtonEvent buttonEvent;
+		buttonEvent.button = SB::BasicEvents::MOUSE_BUTTON_LEFT;
+		buttonEvent.action = SB::BasicEvents::ACTION_PRESS;
+		app.OnMousePressed(buttonEvent);
+		return true;
+	case EMSCRIPTEN_EVENT_MOUSEUP:
+	case EMSCRIPTEN_EVENT_DBLCLICK:
+	{
+		SB::BasicEvents::OnMouseMoveEvent moveEvent;
+		moveEvent.x = event->canvasX;
+		moveEvent.y = event->canvasY;
+		app.OnMouseMove(moveEvent);
+		SB::BasicEvents::OnMouseButtonEvent buttonEvent;
+		buttonEvent.button = SB::BasicEvents::MOUSE_BUTTON_LEFT;
+		buttonEvent.action = SB::BasicEvents::ACTION_RELEASE;
+		app.OnMousePressed(buttonEvent);
+		return true;
+	}
+	}
+	
+
+	return false;
+}
 
 
 EM_BOOL touchCb(int eventType, const EmscriptenTouchEvent* event, void* userData)
@@ -267,12 +255,12 @@ EM_BOOL touchCb(int eventType, const EmscriptenTouchEvent* event, void* userData
 			SB::BasicEvents::OnMouseButtonEvent buttonEvent;
 			buttonEvent.button = SB::BasicEvents::MOUSE_BUTTON_LEFT;
 			buttonEvent.action = SB::BasicEvents::ACTION_RELEASE;
-			app.OnMousePressed(buttonEvent); 
+			app.OnMousePressed(buttonEvent);
 			return true;
 		}
 		}
 	}
-	
+
 
 	return false;
 }
